@@ -4,8 +4,9 @@ import { useState } from "react";
 import { Search, Edit2, Trash2, PawPrint, X, Eye } from "lucide-react";
 import styles from "@/app/dashboard/dashboard.module.css";
 import { motion, AnimatePresence } from "framer-motion";
-import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { deleteRegistration } from "@/app/actions";
+import VisitHistory from "./visit-history";
 
 interface Registration {
   id: string;
@@ -30,7 +31,6 @@ export default function DashboardTable({ initialData }: { initialData: Registrat
   const [data, setData] = useState<Registration[]>(initialData);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedItem, setSelectedItem] = useState<Registration | null>(null);
-  const supabase = createClient();
   const router = useRouter();
 
   const filteredData = data.filter(
@@ -41,8 +41,12 @@ export default function DashboardTable({ initialData }: { initialData: Registrat
 
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this registration?")) {
-      await supabase.from("registrations").delete().eq("id", id);
-      setData(data.filter((d) => d.id !== id));
+      const res = await deleteRegistration(id);
+      if (res.error) {
+        alert(res.error);
+      } else {
+        setData(data.filter((d) => d.id !== id));
+      }
     }
   };
 
@@ -290,6 +294,9 @@ export default function DashboardTable({ initialData }: { initialData: Registrat
                     </span>
                   </div>
                 </div>
+
+                {/* Visit History Section */}
+                <VisitHistory registrationId={selectedItem.id} />
               </div>
 
               <div className={styles.drawerFooter}>

@@ -5,48 +5,12 @@ import { motion } from "framer-motion";
 import { User, Dog, IndianRupee, Save, Loader2, ArrowLeft } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import styles from "@/app/dashboard/register/register.module.css";
 import Link from "next/link";
+import { formSchema, FormValues } from "@/lib/schemas";
+import { createRegistration, updateRegistration } from "@/app/actions";
 
-const formSchema = z.object({
-  owner_name: z.string().min(2, "Name is required"),
-  appointment_time: z.string().optional(),
-  appointment_date: z.string().optional(),
-  address: z.string().min(2, "Address is required"),
-  landmark: z.string().optional(),
-  city: z.string().min(2, "City is required"),
-  state: z.string().min(2, "State is required"),
-  phone: z.string().min(10, "Valid phone number is required"),
-  emergency_contact: z.string().optional(),
-  email: z.string().email("Invalid email").or(z.literal("")),
-  aadhar_card_no: z.string().optional(),
-  other_info: z.string().optional(),
-
-  status: z.enum(["NEW", "OLD"]),
-  dog_name: z.string().min(1, "Dog name is required"),
-  breed: z.string().optional(),
-  weight_kg: z.string().optional(),
-  dog_gender: z.enum(["Male", "Female", ""]),
-  age: z.string().optional(),
-  colour: z.string().optional(),
-  dog_nature: z.enum(["Green", "Orange", "Red", ""]),
-  requires_hostel: z.boolean().default(false),
-  requires_training: z.boolean().default(false),
-  vaccination_card: z.string().optional(),
-  main_issue: z.string().optional(),
-  what_to_learn: z.string().optional(),
-  pick_and_drop: z.string().optional(),
-
-  advance_amount: z.string().optional(),
-  due_amount: z.string().optional(),
-  total_amount: z.string().optional(),
-  per_day_hostel_charges: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
 
 interface Props {
   initialData?: any;
@@ -55,7 +19,6 @@ interface Props {
 
 export default function RegistrationForm({ initialData, registrationId }: Props) {
   const router = useRouter();
-  const supabase = createClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -108,28 +71,20 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
       per_day_hostel_charges: data.per_day_hostel_charges ? parseFloat(data.per_day_hostel_charges) : null,
     };
 
-    let error;
+    let res;
 
-    if (isEditing) {
-      const res = await supabase
-        .from('registrations')
-        .update(payload)
-        .eq('id', registrationId);
-      error = res.error;
+    if (isEditing && registrationId) {
+      res = await updateRegistration(registrationId, payload);
     } else {
-      const res = await supabase
-        .from('registrations')
-        .insert([payload]);
-      error = res.error;
+      res = await createRegistration(payload);
     }
 
     setIsSubmitting(false);
 
-    if (error) {
-      setSubmitError(error.message);
+    if (res.error) {
+      setSubmitError(res.error);
     } else {
       router.push('/dashboard');
-      router.refresh(); // Refresh to show updated data
     }
   };
 
