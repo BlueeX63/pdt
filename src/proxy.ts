@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -31,10 +31,9 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Temporarily bypassing auth for UI preview
-  // if (request.nextUrl.pathname.startsWith('/dashboard') && !user) {
-  //   return NextResponse.redirect(new URL('/login', request.url))
-  // }
+  if (request.nextUrl.pathname.startsWith('/dashboard') && !user) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
 
   if (request.nextUrl.pathname === '/') {
     return NextResponse.redirect(new URL('/dashboard', request.url))
