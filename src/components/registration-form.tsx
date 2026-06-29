@@ -52,7 +52,7 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
     formState: { errors },
     reset,
   } = useForm<FormValues>({
-    // @ts-ignore
+    // @ts-expect-error
     resolver: zodResolver(formSchema),
     defaultValues: getInitialValues(),
   });
@@ -212,7 +212,7 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
 
           <div className={styles.grid}>
             <div className={styles.formGroup}>
-              <label className={styles.label}>Dog's Name *</label>
+              <label className={styles.label}>Dog&apos;s Name *</label>
               <input {...register("dog_name")} className={styles.input} placeholder="Max" />
               {errors.dog_name && <span className={styles.error}>{errors.dog_name.message}</span>}
             </div>
