@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { PawPrint, LayoutDashboard, FileText, Moon, Sun, LogOut, ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import styles from "./layout.module.css";
 

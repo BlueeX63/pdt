@@ -40,7 +40,6 @@ export default function VisitHistory({
       console.error("Failed to fetch admissions:", error);
       // We won't alert here to avoid spamming, but we'll show it in console.
     } else if (data) {
-      // eslint-disable-next-line
       setAdmissions(data as Admission[]);
     }
     setIsLoading(false);

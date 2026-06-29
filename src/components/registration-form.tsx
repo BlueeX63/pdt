@@ -52,7 +52,7 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
     formState: { errors },
     reset,
   } = useForm<FormValues>({
-    // @ts-expect-error
+    // @ts-expect-error mismatch with zodResolver typing
     resolver: zodResolver(formSchema),
     defaultValues: getInitialValues(),
   });
@@ -103,7 +103,11 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit as any)} className={styles.form}>
+      <form 
+        // @ts-expect-error type mismatch with hook form
+        onSubmit={handleSubmit(onSubmit)} 
+        className={styles.form}
+      >
         
         {/* Owner Information Section */}
         <motion.div 
