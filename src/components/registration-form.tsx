@@ -89,7 +89,7 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
     formState: { errors },
     reset,
   } = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as any,
     defaultValues: getInitialValues(),
   });
 
