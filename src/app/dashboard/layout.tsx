@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { PawPrint, LayoutDashboard, FileText, Moon, Sun, LogOut, ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState, useRef, startTransition } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import styles from "./layout.module.css";
 
@@ -12,23 +12,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
-  const mountedRef = useRef(false);
   const [mounted, setMounted] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const supabase = createClient();
 
-  if (!mountedRef.current) {
-    mountedRef.current = true;
-    // Will trigger a re-render on the client only
-    if (typeof window !== "undefined") {
-      // Use queueMicrotask to avoid synchronous setState in effect
-      queueMicrotask(() => setMounted(true));
-    }
-  }
+  useEffect(() => {
+    // eslint-disable-next-line
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.innerWidth <= 768) {
-      startTransition(() => setIsSidebarOpen(false));
+      // eslint-disable-next-line
+      setIsSidebarOpen(false);
     }
   }, [pathname]);
 
