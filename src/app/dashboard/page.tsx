@@ -6,7 +6,7 @@ import { Plus } from "lucide-react";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const { data: registrations, error } = await supabase
+  const { data: registrations } = await supabase
     .from("registrations")
     .select("*")
     .order("created_at", { ascending: false });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { User, Dog, IndianRupee, Save, Loader2, ArrowLeft } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -13,7 +13,7 @@ import { createRegistration, updateRegistration } from "@/app/actions";
 
 
 interface Props {
-  initialData?: any;
+  initialData?: Record<string, unknown>;
   registrationId?: string;
 }
 
@@ -52,7 +52,8 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
     formState: { errors },
     reset,
   } = useForm<FormValues>({
-    resolver: zodResolver(formSchema) as any,
+    // @ts-ignore
+    resolver: zodResolver(formSchema),
     defaultValues: getInitialValues(),
   });
 
@@ -102,7 +103,7 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
+      <form onSubmit={handleSubmit(onSubmit as any)} className={styles.form}>
         
         {/* Owner Information Section */}
         <motion.div 
@@ -275,7 +276,7 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
             </div>
 
             <div className={`${styles.formGroup} ${styles.gridFull}`}>
-              <label className={styles.label}>Dog's Main Issue</label>
+              <label className={styles.label}>Dog&apos;s Main Issue</label>
               <textarea {...register("main_issue")} className={styles.textarea} placeholder="Potty training, biting, over-excitement..." />
             </div>
 

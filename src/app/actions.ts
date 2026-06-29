@@ -1,10 +1,11 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { formSchema, FormValues, admissionSchema, AdmissionValues } from "@/lib/schemas";
+import { AdmissionValues } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
 
-export async function createRegistration(payload: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function createRegistration(payload: Record<string, unknown>) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -24,7 +25,8 @@ export async function createRegistration(payload: any) {
   return { success: true };
 }
 
-export async function updateRegistration(id: string, payload: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function updateRegistration(id: string, payload: Record<string, unknown>) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 

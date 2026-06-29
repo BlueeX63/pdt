@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import RegistrationForm from "@/components/registration-form";
 
-export default async function EditRegistrationPage({ params }: { params: { id: string } }) {
+export default async function EditRegistrationPage({ params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient();
   const resolvedParams = await params;
   

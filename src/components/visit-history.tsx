@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, Trash2, Calendar, Loader2, Edit2 } from "lucide-react";
 import styles from "@/app/dashboard/dashboard.module.css";
 import {
@@ -33,11 +33,7 @@ export default function VisitHistory({
   const [exitDate, setExitDate] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchAdmissions();
-  }, [registrationId]);
-
-  const fetchAdmissions = async () => {
+  const fetchAdmissions = useCallback(async () => {
     setIsLoading(true);
     const { data, error } = await getAdmissions(registrationId);
     if (error) {
@@ -47,7 +43,11 @@ export default function VisitHistory({
       setAdmissions(data as Admission[]);
     }
     setIsLoading(false);
-  };
+  }, [registrationId]);
+
+  useEffect(() => {
+    fetchAdmissions();
+  }, [fetchAdmissions]);
 
   const handleSave = async () => {
     if (!entryDate) return;
