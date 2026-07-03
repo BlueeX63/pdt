@@ -12,9 +12,15 @@ export async function createRegistration(payload: Record<string, unknown>) {
     return { error: "Unauthorized" };
   }
 
-  const { error } = await supabase
+  let { error } = await supabase
     .from("registrations")
     .insert([payload]);
+
+  if (error && (error.code === "42703" || error.message?.includes("column"))) {
+    const { serial_number, owner_photo, dog_photo, ...basicPayload } = payload;
+    const res = await supabase.from("registrations").insert([basicPayload]);
+    error = res.error;
+  }
 
   if (error) {
     return { error: error.message };
@@ -32,10 +38,16 @@ export async function updateRegistration(id: string, payload: Record<string, unk
     return { error: "Unauthorized" };
   }
 
-  const { error } = await supabase
+  let { error } = await supabase
     .from("registrations")
     .update(payload)
     .eq("id", id);
+
+  if (error && (error.code === "42703" || error.message?.includes("column"))) {
+    const { serial_number, owner_photo, dog_photo, ...basicPayload } = payload;
+    const res = await supabase.from("registrations").update(basicPayload).eq("id", id);
+    error = res.error;
+  }
 
   if (error) {
     return { error: error.message };
@@ -74,9 +86,15 @@ export async function createAdmission(payload: AdmissionValues) {
     return { error: "Unauthorized" };
   }
 
-  const { error } = await supabase
+  let { error } = await supabase
     .from("admissions")
     .insert([payload]);
+
+  if (error && (error.message?.includes("entry_time") || error.message?.includes("exit_time") || error.code === "42703")) {
+    const { entry_time, exit_time, ...basicPayload } = payload;
+    const res = await supabase.from("admissions").insert([basicPayload]);
+    error = res.error;
+  }
 
   if (error) {
     return { error: error.message };
@@ -94,10 +112,16 @@ export async function updateAdmission(id: string, payload: AdmissionValues) {
     return { error: "Unauthorized" };
   }
 
-  const { error } = await supabase
+  let { error } = await supabase
     .from("admissions")
     .update(payload)
     .eq("id", id);
+
+  if (error && (error.message?.includes("entry_time") || error.message?.includes("exit_time") || error.code === "42703")) {
+    const { entry_time, exit_time, ...basicPayload } = payload;
+    const res = await supabase.from("admissions").update(basicPayload).eq("id", id);
+    error = res.error;
+  }
 
   if (error) {
     return { error: error.message };

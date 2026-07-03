@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { User, Dog, IndianRupee, Save, Loader2, ArrowLeft } from "lucide-react";
+import { User, Dog, IndianRupee, Save, Loader2, ArrowLeft, Camera, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,228 @@ import styles from "@/app/dashboard/register/register.module.css";
 import Link from "next/link";
 import { formSchema, FormValues } from "@/lib/schemas";
 import { createRegistration, updateRegistration } from "@/app/actions";
+
+function PhotoUploadField({
+  label,
+  value,
+  onChange,
+  icon: Icon,
+}: {
+  label: string;
+  value?: string;
+  onChange: (dataUrl: string) => void;
+  icon: React.ElementType;
+}) {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsProcessing(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const maxDim = 800;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          }
+        } else {
+          if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        onChange(dataUrl);
+        setIsProcessing(false);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className={`${styles.formGroup} ${styles.gridFull}`}>
+      <label className={styles.label}>{label}</label>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "1.25rem",
+          padding: "1rem",
+          border: "1px dashed var(--border-hover)",
+          borderRadius: "var(--radius-md)",
+          backgroundColor: "var(--bg-secondary)",
+        }}
+      >
+        {value ? (
+          <div style={{ position: "relative", width: "80px", height: "80px" }}>
+            <img
+              src={value}
+              alt="Preview"
+              onClick={() => setIsFullscreen(true)}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                borderRadius: "var(--radius-sm)",
+                border: "2px solid var(--border-primary)",
+                cursor: "pointer",
+              }}
+              title="Click to open full screen"
+            />
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange("");
+              }}
+              style={{
+                position: "absolute",
+                top: "-8px",
+                right: "-8px",
+                backgroundColor: "var(--danger)",
+                color: "white",
+                borderRadius: "50%",
+                width: "22px",
+                height: "22px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                cursor: "pointer",
+              }}
+              title="Remove Photo"
+            >
+              <X size={12} />
+            </button>
+          </div>
+        ) : (
+          <div
+            style={{
+              width: "80px",
+              height: "80px",
+              borderRadius: "var(--radius-sm)",
+              backgroundColor: "var(--bg-tertiary)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "var(--text-tertiary)",
+              border: "1px solid var(--border-primary)",
+            }}
+          >
+            {isProcessing ? <Loader2 size={24} className="animate-spin" /> : <Icon size={32} />}
+          </div>
+        )}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", flex: 1 }}>
+          <label
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              padding: "0.5rem 1rem",
+              backgroundColor: "var(--bg-primary)",
+              border: "1px solid var(--border-primary)",
+              borderRadius: "var(--radius-sm)",
+              fontSize: "0.8125rem",
+              fontWeight: 500,
+              color: "var(--text-primary)",
+              cursor: "pointer",
+              width: "fit-content",
+              boxShadow: "var(--shadow-xs)",
+            }}
+          >
+            <Camera size={16} className="text-indigo-500" />
+            {value ? "Change Photo" : "Upload Photo"}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              style={{ display: "none" }}
+            />
+          </label>
+          {value && (
+            <span style={{ fontSize: "0.75rem", color: "var(--text-tertiary)" }}>
+              Click thumbnail to view full screen.
+            </span>
+          )}
+        </div>
+      </div>
+
+      {isFullscreen && value && (
+        <div
+          onClick={() => setIsFullscreen(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.85)",
+            zIndex: 99999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "2rem",
+            cursor: "pointer",
+          }}
+        >
+          <div
+            style={{ position: "relative", maxWidth: "90vw", maxHeight: "90vh" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={value}
+              alt="Full Screen Preview"
+              style={{
+                maxWidth: "100%",
+                maxHeight: "85vh",
+                borderRadius: "var(--radius-md)",
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+                border: "2px solid rgba(255, 255, 255, 0.2)",
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setIsFullscreen(false)}
+              style={{
+                position: "absolute",
+                top: "-16px",
+                right: "-16px",
+                backgroundColor: "var(--danger)",
+                color: "white",
+                borderRadius: "50%",
+                width: "36px",
+                height: "36px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "2px solid white",
+                cursor: "pointer",
+              }}
+              title="Close"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 
 interface Props {
@@ -38,6 +260,9 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
 
     return {
       ...initialData,
+      serial_number: (initialData?.serial_number as string) || "",
+      owner_photo: (initialData?.owner_photo as string) || "",
+      dog_photo: (initialData?.dog_photo as string) || "",
       weight_kg: initialData.weight_kg ? String(initialData.weight_kg) : "",
       advance_amount: initialData.advance_amount ? String(initialData.advance_amount) : "",
       due_amount: initialData.due_amount ? String(initialData.due_amount) : "",
@@ -49,6 +274,8 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
     reset,
   } = useForm<FormValues>({
@@ -83,7 +310,11 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
     setIsSubmitting(false);
 
     if (res.error) {
-      setSubmitError(res.error);
+      setSubmitError(
+        res.error.includes("owner_photo") || res.error.includes("dog_photo") || res.error.includes("does not exist")
+          ? `${res.error} — Did you run the SQL script in Supabase? Run: ALTER TABLE registrations ADD COLUMN IF NOT EXISTS owner_photo TEXT; ALTER TABLE registrations ADD COLUMN IF NOT EXISTS dog_photo TEXT;`
+          : res.error
+      );
     } else {
       router.push('/dashboard');
     }
@@ -122,6 +353,13 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
           </h2>
           
           <div className={styles.grid}>
+            <PhotoUploadField
+              label="Owner Photo"
+              value={watch("owner_photo")}
+              onChange={(url) => setValue("owner_photo", url)}
+              icon={User}
+            />
+
             <div className={styles.formGroup}>
               <label className={styles.label}>Name *</label>
               <input {...register("owner_name")} className={styles.input} placeholder="Full Name" />
@@ -215,6 +453,18 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
           </div>
 
           <div className={styles.grid}>
+            <PhotoUploadField
+              label="Dog Photo"
+              value={watch("dog_photo")}
+              onChange={(url) => setValue("dog_photo", url)}
+              icon={Dog}
+            />
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Dog Serial Number / ID</label>
+              <input {...register("serial_number")} className={styles.input} placeholder="e.g. #101 or Tag No." />
+            </div>
+
             <div className={styles.formGroup}>
               <label className={styles.label}>Dog&apos;s Name *</label>
               <input {...register("dog_name")} className={styles.input} placeholder="Max" />

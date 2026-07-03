@@ -24,6 +24,14 @@ interface Registration {
   dog_nature?: string;
   advance_amount?: number;
   total_amount?: number;
+  owner_photo?: string;
+  dog_photo?: string;
+  serial_number?: string;
+  requires_hostel?: boolean;
+  requires_training?: boolean;
+  what_to_learn?: string;
+  main_issue?: string;
+  pick_and_drop?: string;
   [key: string]: unknown;
 }
 
@@ -31,6 +39,7 @@ export default function DashboardTable({ initialData }: { initialData: Registrat
   const [data, setData] = useState<Registration[]>(initialData);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedItem, setSelectedItem] = useState<Registration | null>(null);
+  const [lightboxImg, setLightboxImg] = useState<string | null>(null);
   const router = useRouter();
 
   const filteredData = data.filter(
@@ -107,9 +116,36 @@ export default function DashboardTable({ initialData }: { initialData: Registrat
                   }}
                 >
                   <td className={styles.td}>
-                    <strong>{item.dog_name}</strong>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                      {item.dog_photo ? (
+                        <img
+                          src={String(item.dog_photo)}
+                          alt={item.dog_name}
+                          style={{ width: "28px", height: "28px", borderRadius: "50%", objectFit: "cover", border: "1px solid var(--border-primary)" }}
+                        />
+                      ) : null}
+                      <strong>
+                        {item.serial_number ? (
+                          <span style={{ color: "var(--accent)", marginRight: "0.35rem" }}>
+                            {item.serial_number.startsWith("#") ? item.serial_number : `#${item.serial_number}`}
+                          </span>
+                        ) : null}
+                        {item.dog_name}
+                      </strong>
+                    </div>
                   </td>
-                  <td className={styles.td}>{item.owner_name}</td>
+                  <td className={styles.td}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                      {item.owner_photo ? (
+                        <img
+                          src={String(item.owner_photo)}
+                          alt={item.owner_name}
+                          style={{ width: "28px", height: "28px", borderRadius: "50%", objectFit: "cover", border: "1px solid var(--border-primary)" }}
+                        />
+                      ) : null}
+                      <span>{item.owner_name}</span>
+                    </div>
+                  </td>
                   <td className={styles.td}>
                     <span
                       className={`${styles.badge} ${
@@ -198,6 +234,38 @@ export default function DashboardTable({ initialData }: { initialData: Registrat
               </div>
 
               <div className={styles.drawerContent}>
+                {/* Photo Previews */}
+                {selectedItem.dog_photo || selectedItem.owner_photo ? (
+                  <div style={{ display: "grid", gridTemplateColumns: selectedItem.dog_photo && selectedItem.owner_photo ? "1fr 1fr" : "1fr", gap: "0.75rem", marginBottom: "0.5rem" }}>
+                    {selectedItem.dog_photo ? (
+                      <div
+                        onClick={() => setLightboxImg(String(selectedItem.dog_photo))}
+                        style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-primary)", cursor: "pointer" }}
+                        title="Click to view full screen"
+                      >
+                        <img src={String(selectedItem.dog_photo)} alt={selectedItem.dog_name} style={{ width: "48px", height: "48px", borderRadius: "50%", objectFit: "cover", border: "2px solid var(--accent)" }} />
+                        <div>
+                          <div style={{ fontSize: "0.6875rem", color: "var(--text-tertiary)", textTransform: "uppercase", fontWeight: 600 }}>Dog Photo</div>
+                          <div style={{ fontSize: "0.875rem", fontWeight: 600 }}>{selectedItem.dog_name}</div>
+                        </div>
+                      </div>
+                    ) : null}
+                    {selectedItem.owner_photo ? (
+                      <div
+                        onClick={() => setLightboxImg(String(selectedItem.owner_photo))}
+                        style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-primary)", cursor: "pointer" }}
+                        title="Click to view full screen"
+                      >
+                        <img src={String(selectedItem.owner_photo)} alt={selectedItem.owner_name} style={{ width: "48px", height: "48px", borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border-hover)" }} />
+                        <div>
+                          <div style={{ fontSize: "0.6875rem", color: "var(--text-tertiary)", textTransform: "uppercase", fontWeight: 600 }}>Owner Photo</div>
+                          <div style={{ fontSize: "0.875rem", fontWeight: 600 }}>{selectedItem.owner_name}</div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 {/* Owner Section */}
                 <div className={styles.detailSection}>
                   <h3 className={styles.detailSectionTitle}>Owner</h3>
@@ -230,6 +298,14 @@ export default function DashboardTable({ initialData }: { initialData: Registrat
                 {/* Dog Section */}
                 <div className={styles.detailSection}>
                   <h3 className={styles.detailSectionTitle}>Dog</h3>
+                  {selectedItem.serial_number ? (
+                    <div className={styles.detailRow}>
+                      <span className={styles.detailLabel}>Serial Number</span>
+                      <span className={styles.detailValue} style={{ fontWeight: 700, color: "var(--accent)" }}>
+                        {selectedItem.serial_number.startsWith("#") ? selectedItem.serial_number : `#${selectedItem.serial_number}`}
+                      </span>
+                    </div>
+                  ) : null}
                   <div className={styles.detailRow}>
                     <span className={styles.detailLabel}>Name</span>
                     <span className={styles.detailValue}>
@@ -272,6 +348,49 @@ export default function DashboardTable({ initialData }: { initialData: Registrat
                       {selectedItem.dog_nature || "—"}
                     </span>
                   </div>
+                </div>
+
+                {/* Services & Requirements Section */}
+                <div className={styles.detailSection}>
+                  <h3 className={styles.detailSectionTitle}>Services Required</h3>
+                  <div className={styles.detailRow} style={{ alignItems: "center" }}>
+                    <span className={styles.detailLabel}>Requested</span>
+                    <span className={styles.detailValue}>
+                      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                        {selectedItem.requires_hostel ? (
+                          <span style={{ backgroundColor: "rgba(99, 102, 241, 0.15)", color: "var(--accent)", padding: "0.2rem 0.6rem", borderRadius: "var(--radius-full)", fontSize: "0.75rem", fontWeight: 600 }}>
+                            🏨 Hostel Stay
+                          </span>
+                        ) : null}
+                        {selectedItem.requires_training ? (
+                          <span style={{ backgroundColor: "rgba(16, 185, 129, 0.15)", color: "var(--success)", padding: "0.2rem 0.6rem", borderRadius: "var(--radius-full)", fontSize: "0.75rem", fontWeight: 600 }}>
+                            🐕 Dog Training
+                          </span>
+                        ) : null}
+                        {!selectedItem.requires_hostel && !selectedItem.requires_training ? (
+                          <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>General / None</span>
+                        ) : null}
+                      </div>
+                    </span>
+                  </div>
+                  {selectedItem.what_to_learn ? (
+                    <div className={styles.detailRow}>
+                      <span className={styles.detailLabel}>What to Learn</span>
+                      <span className={styles.detailValue}>{selectedItem.what_to_learn}</span>
+                    </div>
+                  ) : null}
+                  {selectedItem.main_issue ? (
+                    <div className={styles.detailRow}>
+                      <span className={styles.detailLabel}>Main Issue</span>
+                      <span className={styles.detailValue}>{selectedItem.main_issue}</span>
+                    </div>
+                  ) : null}
+                  {selectedItem.pick_and_drop ? (
+                    <div className={styles.detailRow}>
+                      <span className={styles.detailLabel}>Pick & Drop</span>
+                      <span className={styles.detailValue}>{selectedItem.pick_and_drop}</span>
+                    </div>
+                  ) : null}
                 </div>
 
                 {/* Payment Section */}
@@ -320,6 +439,62 @@ export default function DashboardTable({ initialData }: { initialData: Registrat
           </motion.div>
         )}
       </AnimatePresence>
+
+      {lightboxImg && (
+        <div
+          onClick={() => setLightboxImg(null)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.85)",
+            zIndex: 99999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "2rem",
+            cursor: "pointer",
+          }}
+        >
+          <div style={{ position: "relative", maxWidth: "90vw", maxHeight: "90vh" }} onClick={(e) => e.stopPropagation()}>
+            <img
+              src={lightboxImg}
+              alt="Full Screen"
+              style={{
+                maxWidth: "100%",
+                maxHeight: "85vh",
+                borderRadius: "var(--radius-md)",
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+                border: "2px solid rgba(255, 255, 255, 0.2)",
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setLightboxImg(null)}
+              style={{
+                position: "absolute",
+                top: "-16px",
+                right: "-16px",
+                backgroundColor: "var(--danger)",
+                color: "white",
+                borderRadius: "50%",
+                width: "36px",
+                height: "36px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "2px solid white",
+                cursor: "pointer",
+              }}
+              title="Close"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
