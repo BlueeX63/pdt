@@ -58,7 +58,8 @@ export default function InvoicePaymentClient({
   const rate = Number(registration.per_day_hostel_charges) || 500;
   const totalBill = Number(admission.billed_amount) || days * rate;
   const advance = Number(admission.advance_amount) || 0;
-  const amountDue = Math.max(0, totalBill - advance);
+  const isPaidStatus = isPaid || admission.payment_status === "PAID" || admission.payment_status?.toLowerCase() === "paid";
+  const amountDue = isPaidStatus ? 0 : Math.max(0, totalBill - advance);
   const invoiceNo = admission.invoice_no || `INV-${admission.id.slice(0, 8).toUpperCase()}`;
 
   const handlePayment = async () => {

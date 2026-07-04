@@ -22,6 +22,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
 
   useEffect(() => {
+    const handleResize = () => {
+      if (typeof window !== "undefined" && window.innerWidth <= 1024) {
+        setIsSidebarOpen(false);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
     if (typeof window !== "undefined" && window.innerWidth <= 1024) {
       // eslint-disable-next-line
       setIsSidebarOpen(false);
@@ -104,10 +114,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Menu size={20} />
             </button>
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <PawPrint size={18} style={{ color: "var(--accent)" }} />
-                <span style={{ fontWeight: 700, fontSize: "1.05rem", color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Prakash Dog Training School</span>
-              </div>
+              <span style={{ fontWeight: 600, fontSize: "1rem", color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Dashboard</span>
               <span style={{ color: "var(--border-secondary)", height: "16px", width: "1px", backgroundColor: "var(--border-secondary)", display: "inline-block" }} />
               <span className={styles.date}>{currentDate}</span>
             </div>

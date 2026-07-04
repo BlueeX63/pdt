@@ -339,12 +339,19 @@ export async function sendInvoiceNotification(admissionId: string) {
   const invoiceNo = admission.invoice_no || `INV-${admissionId.slice(0, 8).toUpperCase()}`;
   const totalBill = Number(admission.billed_amount) || 0;
   const advance = Number(admission.advance_amount) || 0;
-  const amountDue = Math.max(0, totalBill - advance);
+  const isPaid = admission.payment_status === "PAID" || admission.payment_status?.toLowerCase() === "paid";
+  const amountDue = isPaid ? 0 : Math.max(0, totalBill - advance);
 
-  const smsText = `Hello ${reg.owner_name}, invoice ${invoiceNo} for ${reg.dog_name}'s stay at Prakash Dog Training School is generated. Total: Rs. ${totalBill.toLocaleString("en-IN")}, Advance: Rs. ${advance.toLocaleString("en-IN")}, Remaining Due: Rs. ${amountDue.toLocaleString("en-IN")}. Thank you!`;
+  const instagramLink = "https://www.instagram.com/dogloverprakash?utm_source=qr";
+  const facebookLink = "https://www.facebook.com/share/1dJmCWUsCp/?mibextid=wwXIfr";
+  const youtubeLink = "https://youtube.com/@dogloverprakash?si=rZxEGxDLMilMQomC";
+
+  const smsText = `Hello ${reg.owner_name},\nInvoice ${invoiceNo} for ${reg.dog_name}'s stay at Prakash Dog Training School is ready.\nTotal: Rs. ${totalBill.toLocaleString("en-IN")} | Advance: Rs. ${advance.toLocaleString("en-IN")} | Due: Rs. ${amountDue.toLocaleString("en-IN")}\n\nStay connected with us:\n- Instagram: ${instagramLink}\n- Facebook: ${facebookLink}\n- YouTube: ${youtubeLink}\n\nThank you!`;
+
+  const instagramText = `Hello ${reg.owner_name}!\nHere is the invoice summary for ${reg.dog_name}'s stay at Prakash Dog Training School:\n\nInvoice: ${invoiceNo}\nTotal Bill: Rs. ${totalBill.toLocaleString("en-IN")}\nAdvance: Rs. ${advance.toLocaleString("en-IN")}\nRemaining Due: Rs. ${amountDue.toLocaleString("en-IN")}\n\nStay connected with us:\n- Instagram: ${instagramLink}\n- Facebook: ${facebookLink}\n- YouTube: ${youtubeLink}\n\nThank you for choosing us!`;
 
   const emailSubject = `Invoice ${invoiceNo} - Prakash Dog Training School`;
-  const emailBody = `Hello ${reg.owner_name},\n\nHere are the invoice details for ${reg.dog_name}'s stay at Prakash Dog Training School:\n\nInvoice Number: ${invoiceNo}\nCheck-In: ${admission.entry_date}\nCheck-Out: ${admission.exit_date || "Present"}\n\nTotal Bill: Rs. ${totalBill.toLocaleString("en-IN")}\nAdvance Paid: Rs. ${advance.toLocaleString("en-IN")}\nRemaining Amount Due: Rs. ${amountDue.toLocaleString("en-IN")}\n\nThank you for choosing Prakash Dog Training School!\n\nBest regards,\nPrakash Dog Training School`;
+  const emailBody = `Hello ${reg.owner_name},\n\nHere are the invoice details for ${reg.dog_name}'s stay at Prakash Dog Training School:\n\nInvoice Number: ${invoiceNo}\nCheck-In: ${admission.entry_date}\nCheck-Out: ${admission.exit_date || "Present"}\n\nFinancial Summary:\n- Total Bill: Rs. ${totalBill.toLocaleString("en-IN")}\n- Advance Paid: Rs. ${advance.toLocaleString("en-IN")}\n- Remaining Amount Due: Rs. ${amountDue.toLocaleString("en-IN")}\n\nStay Connected & Watch Our Dog Training Videos!\nWe regularly share training tips, adorable moments, and progress videos of our furry guests:\n- Instagram: ${instagramLink}\n- Facebook: ${facebookLink}\n- YouTube: ${youtubeLink}\n\nThank you for trusting Prakash Dog Training School with ${reg.dog_name}!\n\nBest regards,\nPrakash Dog Training School`;
 
   const smsKey = env.SMS_PROVIDER_API_KEY?.trim();
   const emailKey = env.EMAIL_PROVIDER_API_KEY?.trim();
@@ -404,6 +411,8 @@ export async function sendInvoiceNotification(admissionId: string) {
     autoDispatched: true,
     autoDispatchMsg: `Invoice ${invoiceNo} automatically sent to Email (${reg.email || "N/A"})`,
     smsText,
+    instagramText,
+    imageUrl: "",
     emailSubject,
     emailBody,
     phone: reg.phone,

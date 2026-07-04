@@ -18,7 +18,7 @@ function PhotoUploadField({
   icon: Icon,
 }: {
   label: string;
-  value?: string;
+  value?: string | null;
   onChange: (dataUrl: string) => void;
   icon: React.ElementType;
 }) {
@@ -278,7 +278,6 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
     formState: { errors },
     reset,
   } = useForm<FormValues>({
-    // @ts-expect-error mismatch with zodResolver typing
     resolver: zodResolver(formSchema),
     defaultValues: getInitialValues(),
   });
@@ -291,10 +290,10 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
       ...data,
       dog_gender: data.dog_gender || null,
       dog_nature: data.dog_nature || null,
-      advance_amount: data.advance_amount ? parseFloat(data.advance_amount) : null,
-      due_amount: data.due_amount ? parseFloat(data.due_amount) : null,
-      total_amount: data.total_amount ? parseFloat(data.total_amount) : null,
-      per_day_hostel_charges: data.per_day_hostel_charges ? parseFloat(data.per_day_hostel_charges) : null,
+      advance_amount: data.advance_amount ? Number(data.advance_amount) : null,
+      due_amount: data.due_amount ? Number(data.due_amount) : null,
+      total_amount: data.total_amount ? Number(data.total_amount) : null,
+      per_day_hostel_charges: data.per_day_hostel_charges ? Number(data.per_day_hostel_charges) : null,
     };
 
     let res;
@@ -333,7 +332,7 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
       </div>
 
       <form 
-        // @ts-expect-error type mismatch with hook form
+        
         onSubmit={handleSubmit(onSubmit)} 
         className={styles.form}
       >

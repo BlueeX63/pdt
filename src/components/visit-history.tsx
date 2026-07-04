@@ -13,6 +13,7 @@ import {
 import { AdmissionValues } from "@/lib/schemas";
 import { Plus, Trash2, Calendar, Loader2, Edit2, LogOut, LogIn, Clock, CheckCircle2, X, Share2, ShieldCheck, Copy, Check, MessageSquare, Mail, ExternalLink, MessageCircle } from "lucide-react";
 
+
 interface Admission {
   id: string;
   registration_id: string;
@@ -106,6 +107,8 @@ export default function VisitHistory({
     invoiceNo: string;
     amount: number;
     smsText: string;
+    instagramText?: string;
+    imageUrl?: string;
     emailSubject: string;
     emailBody: string;
     phone: string;
@@ -174,6 +177,8 @@ export default function VisitHistory({
           invoiceNo: notif.invoiceNo || `INV-${res.data.id.slice(0, 8).toUpperCase()}`,
           amount: notif.amount !== undefined ? notif.amount : 0,
           smsText: notif.smsText || "",
+          instagramText: notif.instagramText || "",
+          imageUrl: notif.imageUrl || "",
           emailSubject: notif.emailSubject || "",
           emailBody: notif.emailBody || "",
           phone: notif.phone || "",
@@ -201,7 +206,8 @@ export default function VisitHistory({
     const days = calculateDays(visit.entry_date, checkoutDate);
     const amount = days * perDayCharges;
     const adv = Number(checkoutAdvance) || 0;
-    const amountDue = Math.max(0, amount - adv);
+    const isPaidCheckOut = checkoutStatus === "PAID" || checkoutStatus?.toLowerCase() === "paid";
+    const amountDue = isPaidCheckOut ? 0 : Math.max(0, amount - adv);
     const invNo = visit.invoice_no || `INV-${visit.id.slice(0, 8).toUpperCase()}`;
     const newStatus = checkoutStatus;
 
@@ -241,6 +247,8 @@ export default function VisitHistory({
         invoiceNo: notif.invoiceNo || invNo,
         amount: notif.amount !== undefined ? notif.amount : amountDue,
         smsText: notif.smsText || "",
+        instagramText: notif.instagramText || "",
+        imageUrl: notif.imageUrl || "",
         emailSubject: notif.emailSubject || "",
         emailBody: notif.emailBody || "",
         phone: notif.phone || "",
@@ -261,6 +269,7 @@ export default function VisitHistory({
     const visit = admissions.find((a) => a.id === id);
     const invNo = visit?.invoice_no || `INV-${id.slice(0, 8).toUpperCase()}`;
     const newStatus = editStatus;
+    const isPaidEdit = newStatus === "PAID" || newStatus?.toLowerCase() === "paid";
 
     const payload: AdmissionValues = {
       registration_id: registrationId,
@@ -289,8 +298,10 @@ export default function VisitHistory({
         setInvoiceModalData({
           id: id,
           invoiceNo: notif.invoiceNo || invNo,
-          amount: notif.amount !== undefined ? notif.amount : Math.max(0, amount - adv),
+          amount: notif.amount !== undefined ? notif.amount : (isPaidEdit ? 0 : Math.max(0, amount - adv)),
           smsText: notif.smsText || "",
+          instagramText: notif.instagramText || "",
+          imageUrl: notif.imageUrl || "",
           emailSubject: notif.emailSubject || "",
           emailBody: notif.emailBody || "",
           phone: notif.phone || "",
@@ -344,13 +355,16 @@ export default function VisitHistory({
       const days = calculateDays(visit.entry_date, visit.exit_date);
       const totalBill = Number(visit.billed_amount) || days * perDayCharges;
       const adv = Number(visit.advance_amount) || 0;
-      const amountDue = Math.max(0, totalBill - adv);
+      const isPaidShare = visit.payment_status === "PAID" || visit.payment_status?.toLowerCase() === "paid";
+      const amountDue = isPaidShare ? 0 : Math.max(0, totalBill - adv);
       const invNo = visit.invoice_no || `INV-${visit.id.slice(0, 8).toUpperCase()}`;
       setInvoiceModalData({
         id: visit.id,
         invoiceNo: notif.invoiceNo || invNo,
         amount: notif.amount !== undefined ? notif.amount : amountDue,
         smsText: notif.smsText || "",
+        instagramText: notif.instagramText || "",
+        imageUrl: notif.imageUrl || "",
         emailSubject: notif.emailSubject || "",
         emailBody: notif.emailBody || "",
         phone: notif.phone || "",
@@ -396,8 +410,8 @@ export default function VisitHistory({
     const days = calculateDays(visit.entry_date, visit.exit_date);
     const totalBill = Number(visit.billed_amount) || days * perDayCharges;
     const advance = Number(visit.advance_amount) || 0;
-    const amountDue = Math.max(0, totalBill - advance);
-    const isPaid = visit.payment_status === "PAID";
+    const isPaid = visit.payment_status === "PAID" || visit.payment_status?.toLowerCase() === "paid";
+    const amountDue = isPaid ? 0 : Math.max(0, totalBill - advance);
 
     return (
       <div
@@ -1043,6 +1057,17 @@ export default function VisitHistory({
                   href={`https://wa.me/${(invoiceModalData.phone || "").replace(/\D/g, "").length === 10 ? "91" + (invoiceModalData.phone || "").replace(/\D/g, "") : (invoiceModalData.phone || "").replace(/\D/g, "")}?text=${encodeURIComponent(invoiceModalData.smsText)}`}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={async () => {
+                    try {
+                      const res = await fetch("/banner.png");
+                      const blob = await res.blob();
+                      if (navigator.clipboard && navigator.clipboard.write) {
+                        await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+                      }
+                    } catch (err) {
+                      console.log("Silent clipboard copy failed:", err);
+                    }
+                  }}
                   style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", color: "var(--text-primary)", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 600, fontSize: "0.85rem", whiteSpace: "nowrap" }}
                 >
                   <MessageCircle size={16} style={{ color: "#25D366" }} />
@@ -1068,7 +1093,7 @@ export default function VisitHistory({
                   style={{ padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", borderRadius: "0.5rem", color: "var(--text-primary)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", fontWeight: 600, fontSize: "0.85rem", whiteSpace: "nowrap" }}
                 >
                   {copiedLink ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
-                  {copiedLink ? "Copied!" : "Copy Text"}
+                  {copiedLink ? "Copied All Text & Links!" : "Copy Full Text & Links"}
                 </button>
               </div>
             </div>
