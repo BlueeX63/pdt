@@ -569,6 +569,29 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
           </div>
         </motion.div>
 
+        {/* Terms & Conditions Checkbox */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem", padding: "1.25rem", backgroundColor: "var(--bg-secondary)", borderRadius: "0.75rem", border: "1px solid var(--border-primary)", marginTop: "1.5rem", marginBottom: "0.5rem" }}>
+          <input
+            type="checkbox"
+            id="terms_accepted"
+            required
+            defaultChecked={isEditing}
+            style={{ width: "18px", height: "18px", marginTop: "0.15rem", accentColor: "var(--accent)", cursor: "pointer", flexShrink: 0 }}
+          />
+          <label htmlFor="terms_accepted" style={{ fontSize: "0.875rem", color: "var(--text-primary)", lineHeight: "1.5", cursor: "pointer" }}>
+            I confirm that the dog owner has read and agreed to the{" "}
+            <a
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "underline" }}
+            >
+              Terms &amp; Conditions
+            </a>{" "}
+            of Prakash Dog Training School, including the mandatory 20-day recurring fee payment, owner responsibility for vaccinations/deworming, health &amp; natural death disclaimer, and the 7-day abandonment &amp; relocation policy.
+          </label>
+        </div>
+
         {submitError && (
           <div className={styles.submitError}>
             {submitError}

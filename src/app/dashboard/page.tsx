@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import DashboardTable from "@/components/dashboard-table";
+import DashboardStats from "@/components/dashboard-stats";
 import styles from "./dashboard.module.css";
 import Link from "next/link";
 import { Plus } from "lucide-react";
@@ -32,6 +33,8 @@ export default async function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      <DashboardStats registrations={registrations || []} admissions={admissions || []} />
 
       <div className={styles.tableCard}>
         <DashboardTable initialData={registrations || []} initialAdmissions={admissions || []} />
