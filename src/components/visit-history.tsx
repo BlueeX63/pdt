@@ -1013,7 +1013,7 @@ export default function VisitHistory({
                 {resendingAuto ? (
                   <>
                     <Loader2 size={18} className="animate-spin" />
-                    Sending Email &amp; SMS...
+                    Sending Email...
                   </>
                 ) : resendSuccess ? (
                   <>
@@ -1023,19 +1023,29 @@ export default function VisitHistory({
                 ) : (
                   <>
                     <Share2 size={18} />
-                    Send Automatic SMS &amp; Email
+                    Send Automatic Email
                   </>
                 )}
               </button>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.6rem" }}>
+                <a
+                  href={`sms:${invoiceModalData.phone}?body=${encodeURIComponent(invoiceModalData.smsText)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", color: "var(--text-primary)", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 600, fontSize: "0.8rem", whiteSpace: "nowrap" }}
+                >
+                  <MessageSquare size={15} className="text-blue-500" />
+                  SMS App
+                </a>
+
                 <a
                   href={invoiceModalData.email ? `mailto:${invoiceModalData.email}?subject=${encodeURIComponent(invoiceModalData.emailSubject)}&body=${encodeURIComponent(invoiceModalData.emailBody)}` : `mailto:?subject=${encodeURIComponent(invoiceModalData.emailSubject)}&body=${encodeURIComponent(invoiceModalData.emailBody)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", padding: "0.75rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", color: "var(--text-primary)", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 600, fontSize: "0.85rem" }}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", color: "var(--text-primary)", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 600, fontSize: "0.8rem", whiteSpace: "nowrap" }}
                 >
-                  <Mail size={16} className="text-indigo-500" />
+                  <Mail size={15} className="text-indigo-500" />
                   Email App
                 </a>
 
@@ -1045,9 +1055,9 @@ export default function VisitHistory({
                     setCopiedLink(true);
                     setTimeout(() => setCopiedLink(false), 2000);
                   }}
-                  style={{ padding: "0.75rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", borderRadius: "0.5rem", color: "var(--text-primary)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", fontWeight: 600, fontSize: "0.85rem" }}
+                  style={{ padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", borderRadius: "0.5rem", color: "var(--text-primary)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", fontWeight: 600, fontSize: "0.8rem", whiteSpace: "nowrap" }}
                 >
-                  {copiedLink ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
+                  {copiedLink ? <Check size={15} className="text-emerald-500" /> : <Copy size={15} />}
                   {copiedLink ? "Copied!" : "Copy Text"}
                 </button>
               </div>

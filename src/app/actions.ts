@@ -311,9 +311,9 @@ export async function sendInvoiceNotification(admissionId: string) {
   const emailSubject = `Invoice ${invoiceNo} - Prakash Dog Training School`;
   const emailBody = `Hello ${reg.owner_name},\n\nHere are the invoice details for ${reg.dog_name}'s stay at Prakash Dog Training School:\n\nInvoice Number: ${invoiceNo}\nCheck-In: ${admission.entry_date}\nCheck-Out: ${admission.exit_date || "Present"}\n\nTotal Bill: Rs. ${totalBill.toLocaleString("en-IN")}\nAdvance Paid: Rs. ${advance.toLocaleString("en-IN")}\nRemaining Amount Due: Rs. ${amountDue.toLocaleString("en-IN")}\n\nThank you for choosing Prakash Dog Training School!\n\nBest regards,\nPrakash Dog Training School`;
 
-  const smsKey = process.env.SMS_PROVIDER_API_KEY;
-  const emailKey = process.env.EMAIL_PROVIDER_API_KEY;
-  const emailFrom = process.env.EMAIL_FROM || "billing@prakashdogtraining.com";
+  const smsKey = process.env.SMS_PROVIDER_API_KEY?.trim();
+  const emailKey = process.env.EMAIL_PROVIDER_API_KEY?.trim();
+  const emailFrom = process.env.EMAIL_FROM?.trim() || "billing@prakashdogtraining.com";
 
   if (reg.email && emailKey && emailKey !== "placeholder_email_api_key") {
     try {
@@ -356,46 +356,18 @@ export async function sendInvoiceNotification(admissionId: string) {
     }
   }
 
-  if (reg.phone && smsKey && smsKey !== "placeholder_sms_api_key") {
-    try {
-      const cleanPhone = reg.phone.replace(/[^0-9]/g, "").slice(-10);
-      const res = await fetch("https://www.fast2sms.com/dev/bulkV2", {
-        method: "POST",
-        headers: {
-          "authorization": smsKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          route: "q",
-          message: smsText,
-          language: "english",
-          flash: 0,
-          numbers: cleanPhone,
-        }),
-      });
-      const resData = await res.json().catch(() => ({}));
-      console.log("[FAST2SMS RESULT]:", res.status, resData);
-    } catch (err) {
-      console.error("[SMS SEND ERROR]:", err);
-    }
-  }
-
   console.log("======================================================");
-  console.log(`[⚡ AUTOMATIC INVOICE DISPATCH ⚡]`);
-  console.log(`-> SMS Sent to Owner Phone: ${reg.phone} (${reg.owner_name})`);
+  console.log(`[⚡ AUTOMATIC EMAIL DISPATCH ⚡]`);
   console.log(`-> Email Sent to Owner Email: ${reg.email || "No email on file"} (${reg.owner_name})`);
   console.log(`-> Invoice No: ${invoiceNo} | Total: Rs. ${totalBill} | Advance: Rs. ${advance} | Due: Rs. ${amountDue}`);
-  console.log(`-> SMS Content: "${smsText}"`);
+  console.log(`-> SMS Content Prepared for Manual Sending: "${smsText}"`);
   console.log(`-> Email Subject: "${emailSubject}"`);
-  if (!smsKey || smsKey === "placeholder_sms_api_key") {
-    console.log("[NOTE] Using SMS/Email API placeholders in .env. Automatic dispatch simulated successfully.");
-  }
   console.log("======================================================");
 
   return {
     success: true,
     autoDispatched: true,
-    autoDispatchMsg: `Invoice ${invoiceNo} automatically sent to SMS (${reg.phone}) & Email (${reg.email || "N/A"})`,
+    autoDispatchMsg: `Invoice ${invoiceNo} automatically sent to Email (${reg.email || "N/A"})`,
     smsText,
     emailSubject,
     emailBody,
