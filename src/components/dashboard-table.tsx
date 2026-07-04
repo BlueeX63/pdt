@@ -8,6 +8,14 @@ import { useRouter } from "next/navigation";
 import { deleteRegistration } from "@/app/actions";
 import VisitHistory from "./visit-history";
 
+interface Admission {
+  id: string;
+  registration_id: string;
+  entry_date: string;
+  exit_date?: string | null;
+  [key: string]: unknown;
+}
+
 interface Registration {
   id: string;
   created_at: string;
@@ -24,6 +32,7 @@ interface Registration {
   dog_nature?: string;
   advance_amount?: number;
   total_amount?: number;
+  per_day_hostel_charges?: number | string;
   owner_photo?: string;
   dog_photo?: string;
   serial_number?: string;
@@ -35,18 +44,53 @@ interface Registration {
   [key: string]: unknown;
 }
 
-export default function DashboardTable({ initialData }: { initialData: Registration[] }) {
+export default function DashboardTable({
+  initialData,
+  initialAdmissions = [],
+}: {
+  initialData: Registration[];
+  initialAdmissions?: Admission[];
+}) {
   const [data, setData] = useState<Registration[]>(initialData);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterMode, setFilterMode] = useState<"ALL" | "ACTIVE">("ALL");
   const [selectedItem, setSelectedItem] = useState<Registration | null>(null);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
   const router = useRouter();
 
-  const filteredData = data.filter(
-    (item) =>
-      item.dog_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.owner_name?.toLowerCase().includes(searchTerm.toLowerCase())
+  const activeRegistrationIds = new Set(
+    initialAdmissions.filter((a) => !a.exit_date).map((a) => a.registration_id)
   );
+
+  const filteredData = data.filter((item) => {
+    const matchesSearch =
+      item.dog_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.owner_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!matchesSearch) return false;
+    if (filterMode === "ACTIVE") {
+      return activeRegistrationIds.has(item.id);
+    }
+    return true;
+  });
+
+  const calculateDogStayStats = (regId: string, perDayCharges: number = 0) => {
+    const dogAdmissions = initialAdmissions.filter((a) => a.registration_id === regId);
+    let totalDays = 0;
+    dogAdmissions.forEach((a) => {
+      if (!a.entry_date) return;
+      const startDate = new Date(a.entry_date);
+      startDate.setHours(0, 0, 0, 0);
+
+      const endDate = a.exit_date ? new Date(a.exit_date) : new Date();
+      endDate.setHours(0, 0, 0, 0);
+
+      const diffTime = endDate.getTime() - startDate.getTime();
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+      totalDays += Math.max(1, diffDays + 1);
+    });
+    const totalAmount = totalDays * perDayCharges;
+    return { totalDays, totalAmount, stayCount: dogAdmissions.length };
+  };
 
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this registration?")) {
@@ -71,6 +115,49 @@ export default function DashboardTable({ initialData }: { initialData: Registrat
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+        </div>
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem", margin: "1rem 0", padding: "0.85rem 1.25rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-primary)" }}>
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <button
+            onClick={() => setFilterMode("ALL")}
+            style={{
+              padding: "0.45rem 1rem",
+              borderRadius: "var(--radius-full)",
+              fontSize: "0.8125rem",
+              fontWeight: 600,
+              border: "none",
+              cursor: "pointer",
+              transition: "all 0.2s",
+              backgroundColor: filterMode === "ALL" ? "var(--accent)" : "transparent",
+              color: filterMode === "ALL" ? "white" : "var(--text-secondary)",
+              boxShadow: filterMode === "ALL" ? "var(--shadow-sm)" : "none",
+            }}
+          >
+            All Dogs ({data.length})
+          </button>
+          <button
+            onClick={() => setFilterMode("ACTIVE")}
+            style={{
+              padding: "0.45rem 1rem",
+              borderRadius: "var(--radius-full)",
+              fontSize: "0.8125rem",
+              fontWeight: 600,
+              border: "none",
+              cursor: "pointer",
+              transition: "all 0.2s",
+              backgroundColor: filterMode === "ACTIVE" ? "var(--success)" : "transparent",
+              color: filterMode === "ACTIVE" ? "white" : "var(--text-secondary)",
+              boxShadow: filterMode === "ACTIVE" ? "var(--shadow-sm)" : "none",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.4rem",
+            }}
+          >
+            <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: filterMode === "ACTIVE" ? "white" : "var(--success)" }} />
+            Active Dogs (In School) ({activeRegistrationIds.size})
+          </button>
         </div>
       </div>
 
@@ -412,10 +499,19 @@ export default function DashboardTable({ initialData }: { initialData: Registrat
                         : "—"}
                     </span>
                   </div>
+                  <div className={styles.detailRow}>
+                    <span className={styles.detailLabel}>Hostel Stay Charges</span>
+                    <span className={styles.detailValue} style={{ fontWeight: 600, color: "var(--success)" }}>
+                      {(() => {
+                        const stats = calculateDogStayStats(selectedItem.id, Number(selectedItem.per_day_hostel_charges) || 0);
+                        return `₹${stats.totalAmount.toLocaleString("en-IN")} (${stats.totalDays} day${stats.totalDays > 1 ? "s" : ""})`;
+                      })()}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Visit History Section */}
-                <VisitHistory registrationId={selectedItem.id} />
+                <VisitHistory registrationId={selectedItem.id} perDayCharges={Number(selectedItem.per_day_hostel_charges) || 0} />
               </div>
 
               <div className={styles.drawerFooter}>

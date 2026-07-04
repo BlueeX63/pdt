@@ -21,10 +21,48 @@ interface Admission {
   notes?: string | null;
 }
 
+const calculateDays = (start: string, end?: string | null) => {
+  if (!start) return 0;
+  const startDate = new Date(start);
+  startDate.setHours(0, 0, 0, 0);
+
+  const endDate = end ? new Date(end) : new Date();
+  endDate.setHours(0, 0, 0, 0);
+
+  const diffTime = endDate.getTime() - startDate.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+  return Math.max(1, diffDays + 1);
+};
+
+const formatDate = (dateStr: string) => {
+  return new Date(dateStr).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const formatTime = (timeStr?: string | null) => {
+  if (!timeStr) return "";
+  try {
+    const [partsHours, partsMins] = timeStr.split(":");
+    let hours = parseInt(partsHours, 10);
+    const mins = partsMins;
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    return `${hours}:${mins} ${ampm}`;
+  } catch {
+    return timeStr;
+  }
+};
+
 export default function VisitHistory({
   registrationId,
+  perDayCharges = 0,
 }: {
   registrationId: string;
+  perDayCharges?: number;
 }) {
   const [admissions, setAdmissions] = useState<Admission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,6 +107,11 @@ export default function VisitHistory({
 
   const activeVisit = admissions.find((a) => !a.exit_date);
   const pastVisits = admissions.filter((a) => !!a.exit_date);
+
+  const totalDaysAllStays = admissions.reduce((acc, visit) => {
+    return acc + calculateDays(visit.entry_date, visit.exit_date);
+  }, 0);
+  const totalAmountAllStays = totalDaysAllStays * perDayCharges;
 
   const handleCreateCheckIn = async () => {
     if (!entryDate) return;
@@ -166,36 +209,6 @@ export default function VisitHistory({
     setEditExitTime(admission.exit_time || "");
   };
 
-  const calculateDays = (start: string, end?: string | null) => {
-    const s = new Date(start).getTime();
-    const e = end ? new Date(end).getTime() : new Date().getTime();
-    const diffDays = Math.ceil(Math.abs(e - s) / (1000 * 60 * 60 * 24));
-    return diffDays === 0 ? 1 : diffDays;
-  };
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
-  const formatTime = (timeStr?: string | null) => {
-    if (!timeStr) return "";
-    try {
-      const [partsHours, partsMins] = timeStr.split(":");
-      let hours = parseInt(partsHours, 10);
-      const mins = partsMins;
-      const ampm = hours >= 12 ? "PM" : "AM";
-      hours = hours % 12;
-      hours = hours ? hours : 12;
-      return `${hours}:${mins} ${ampm}`;
-    } catch {
-      return timeStr;
-    }
-  };
-
   const todayStr = new Date().toISOString().split("T")[0];
 
   return (
@@ -220,6 +233,41 @@ export default function VisitHistory({
           </button>
         )}
       </div>
+
+      {admissions.length > 0 && !isLoading && (
+        <div
+          style={{
+            padding: "0.75rem 1rem",
+            backgroundColor: "var(--bg-secondary)",
+            borderRadius: "var(--radius-sm)",
+            border: "1px solid var(--border-primary)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "0.5rem",
+            fontSize: "0.8rem",
+            marginBottom: "0.85rem",
+          }}
+        >
+          <div>
+            <span style={{ color: "var(--text-tertiary)" }}>Total Stays:</span>{" "}
+            <strong>{admissions.length}</strong>
+            <span style={{ margin: "0 0.5rem", color: "var(--border-secondary)" }}>|</span>
+            <span style={{ color: "var(--text-tertiary)" }}>Total Stay Days:</span>{" "}
+            <strong>{totalDaysAllStays} day(s)</strong>
+          </div>
+          <div>
+            <span style={{ color: "var(--text-tertiary)" }}>Rate/Day:</span>{" "}
+            <strong>₹{perDayCharges.toLocaleString("en-IN")}</strong>
+            <span style={{ margin: "0 0.5rem", color: "var(--border-secondary)" }}>|</span>
+            <span style={{ color: "var(--text-tertiary)" }}>Total Stays Amount:</span>{" "}
+            <strong style={{ color: "var(--success)", fontSize: "0.95rem" }}>
+              ₹{totalAmountAllStays.toLocaleString("en-IN")}
+            </strong>
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
         <div style={{ display: "flex", justifyContent: "center", padding: "1.5rem" }}>
@@ -266,6 +314,9 @@ export default function VisitHistory({
                 </span>
                 <span style={{ backgroundColor: "rgba(16, 185, 129, 0.15)", padding: "0.15rem 0.5rem", borderRadius: "var(--radius-full)", fontSize: "0.7rem", fontWeight: 600 }}>
                   Day {calculateDays(activeVisit.entry_date)}
+                </span>
+                <span style={{ backgroundColor: "rgba(99, 102, 241, 0.15)", color: "var(--accent)", padding: "0.15rem 0.5rem", borderRadius: "var(--radius-full)", fontSize: "0.7rem", fontWeight: 600 }}>
+                  Amount: ₹{(calculateDays(activeVisit.entry_date) * perDayCharges).toLocaleString("en-IN")}
                 </span>
               </div>
 
@@ -536,8 +587,10 @@ export default function VisitHistory({
                               {" → "}
                               {visit.exit_date ? `${formatDate(visit.exit_date)} ${visit.exit_time ? `(${formatTime(visit.exit_time)})` : ""}` : "Present"}
                             </div>
-                            <div style={{ fontSize: "0.7rem", color: "var(--text-tertiary)" }}>
-                              Duration: {calculateDays(visit.entry_date, visit.exit_date)} day(s)
+                            <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: "flex", gap: "0.75rem", marginTop: "0.2rem", flexWrap: "wrap" }}>
+                              <span>Duration: <strong>{calculateDays(visit.entry_date, visit.exit_date)} day(s)</strong></span>
+                              <span>Rate: <strong>₹{perDayCharges}/day</strong></span>
+                              <span style={{ color: "var(--success)", fontWeight: 600 }}>Amount: ₹{(calculateDays(visit.entry_date, visit.exit_date) * perDayCharges).toLocaleString("en-IN")}</span>
                             </div>
                           </div>
                         </div>

@@ -11,6 +11,10 @@ export default async function DashboardPage() {
     .select("*")
     .order("created_at", { ascending: false });
 
+  const { data: admissions } = await supabase
+    .from("admissions")
+    .select("*");
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -30,7 +34,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className={styles.tableCard}>
-        <DashboardTable initialData={registrations || []} />
+        <DashboardTable initialData={registrations || []} initialAdmissions={admissions || []} />
       </div>
     </div>
   );

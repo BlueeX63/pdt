@@ -263,7 +263,6 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
       serial_number: (initialData?.serial_number as string) || "",
       owner_photo: (initialData?.owner_photo as string) || "",
       dog_photo: (initialData?.dog_photo as string) || "",
-      weight_kg: initialData.weight_kg ? String(initialData.weight_kg) : "",
       advance_amount: initialData.advance_amount ? String(initialData.advance_amount) : "",
       due_amount: initialData.due_amount ? String(initialData.due_amount) : "",
       total_amount: initialData.total_amount ? String(initialData.total_amount) : "",
@@ -292,7 +291,6 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
       ...data,
       dog_gender: data.dog_gender || null,
       dog_nature: data.dog_nature || null,
-      weight_kg: data.weight_kg ? parseFloat(data.weight_kg) : null,
       advance_amount: data.advance_amount ? parseFloat(data.advance_amount) : null,
       due_amount: data.due_amount ? parseFloat(data.due_amount) : null,
       total_amount: data.total_amount ? parseFloat(data.total_amount) : null,
@@ -474,11 +472,6 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
             <div className={styles.formGroup}>
               <label className={styles.label}>Breed</label>
               <input {...register("breed")} className={styles.input} placeholder="Golden Retriever" />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Weight (kgs)</label>
-              <input {...register("weight_kg")} type="number" step="0.1" className={styles.input} placeholder="25" />
             </div>
 
             <div className={styles.formGroup}>

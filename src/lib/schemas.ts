@@ -20,7 +20,6 @@ export const formSchema = z.object({
   dog_name: z.string().min(1, "Dog name is required"),
   dog_photo: z.string().optional(),
   breed: z.string().optional(),
-  weight_kg: z.string().optional(),
   dog_gender: z.enum(["Male", "Female", ""]),
   age: z.string().optional(),
   colour: z.string().optional(),

@@ -12,6 +12,23 @@ export async function createRegistration(payload: Record<string, unknown>) {
     return { error: "Unauthorized" };
   }
 
+  if (payload.serial_number && typeof payload.serial_number === "string" && payload.serial_number.trim() !== "") {
+    const val = payload.serial_number.trim();
+    const valWithHash = val.startsWith("#") ? val : `#${val}`;
+    const valWithoutHash = val.replace(/^#/, "");
+
+    const { data: existing } = await supabase
+      .from("registrations")
+      .select("id, dog_name, serial_number")
+      .in("serial_number", [val, valWithHash, valWithoutHash]);
+
+    if (existing && existing.length > 0) {
+      return {
+        error: `Serial number "${val}" is already assigned to dog "${existing[0].dog_name}". Serial numbers must be unique.`,
+      };
+    }
+  }
+
   let { error } = await supabase
     .from("registrations")
     .insert([payload]);
@@ -36,6 +53,24 @@ export async function updateRegistration(id: string, payload: Record<string, unk
 
   if (!user) {
     return { error: "Unauthorized" };
+  }
+
+  if (payload.serial_number && typeof payload.serial_number === "string" && payload.serial_number.trim() !== "") {
+    const val = payload.serial_number.trim();
+    const valWithHash = val.startsWith("#") ? val : `#${val}`;
+    const valWithoutHash = val.replace(/^#/, "");
+
+    const { data: existing } = await supabase
+      .from("registrations")
+      .select("id, dog_name, serial_number")
+      .in("serial_number", [val, valWithHash, valWithoutHash])
+      .neq("id", id);
+
+    if (existing && existing.length > 0) {
+      return {
+        error: `Serial number "${val}" is already assigned to dog "${existing[0].dog_name}". Serial numbers must be unique.`,
+      };
+    }
   }
 
   let { error } = await supabase
