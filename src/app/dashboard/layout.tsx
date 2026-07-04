@@ -59,7 +59,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className={styles.logoIcon}>
             <PawPrint size={16} strokeWidth={2.5} />
           </div>
-          <span className={styles.sidebarText}>PDT School</span>
+          <span className={styles.sidebarText}>Prakash Training School</span>
           <button 
             className={styles.mobileCloseBtn} 
             onClick={() => setIsSidebarOpen(false)}
@@ -103,7 +103,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               <Menu size={20} />
             </button>
-            <span className={styles.date}>{currentDate}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <PawPrint size={18} style={{ color: "var(--accent)" }} />
+                <span style={{ fontWeight: 700, fontSize: "1.05rem", color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Prakash Training School</span>
+              </div>
+              <span style={{ color: "var(--border-secondary)", height: "16px", width: "1px", backgroundColor: "var(--border-secondary)", display: "inline-block" }} />
+              <span className={styles.date}>{currentDate}</span>
+            </div>
           </div>
 
           <div className={styles.topbarRight}>
