@@ -91,7 +91,7 @@ export default function DashboardStats({
   });
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1rem", marginBottom: "0.5rem" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "0.5rem" }}>
       {/* Card 1: This Month's Revenue */}
       <div
         style={{

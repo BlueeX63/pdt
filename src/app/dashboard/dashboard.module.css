@@ -400,15 +400,17 @@
   box-shadow: 0 2px 8px rgba(99, 91, 255, 0.2);
 }
 
-/* ═══════ MOBILE RESPONSIVENESS ═══════ */
-@media (max-width: 768px) {
+/* ═══════ TABLET & MOBILE RESPONSIVENESS (<= 1024px) ═══════ */
+@media (max-width: 1024px) {
   .header {
     flex-direction: column;
+    align-items: stretch;
     gap: 1rem;
   }
 
   .actions {
     width: 100%;
+    display: flex;
   }
 
   .buttonPrimary {
@@ -419,10 +421,13 @@
   .tableHeader {
     flex-direction: column;
     align-items: stretch;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
   }
 
   .search {
     width: 100%;
+    max-width: 100%;
   }
 
   .drawerOverlay {
@@ -447,5 +452,22 @@
     text-align: center;
     justify-content: center;
     display: flex;
+  }
+}
+
+/* ═══════ SMALL MOBILE RESPONSIVENESS (<= 480px) ═══════ */
+@media (max-width: 480px) {
+  .th {
+    padding: 0.45rem 0.6rem;
+    font-size: 0.65rem;
+  }
+
+  .td {
+    padding: 0.55rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .title {
+    font-size: 1.25rem;
   }
 }
