@@ -156,10 +156,7 @@
   white-space: nowrap;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  position: sticky;
-  top: 60px;
   background-color: var(--bg-primary);
-  z-index: 20;
 }
 
 .td {
