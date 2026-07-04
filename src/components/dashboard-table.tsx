@@ -67,9 +67,13 @@ export default function DashboardTable({
   );
 
   const filteredData = data.filter((item) => {
+    const term = searchTerm.toLowerCase().trim();
     const matchesSearch =
-      item.dog_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.owner_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      item.dog_name?.toLowerCase().includes(term) ||
+      item.owner_name?.toLowerCase().includes(term) ||
+      item.serial_number?.toLowerCase().includes(term) ||
+      item.phone?.toLowerCase().includes(term) ||
+      item.breed?.toLowerCase().includes(term);
     if (!matchesSearch) return false;
     if (filterMode === "ACTIVE") {
       return activeRegistrationIds.has(item.id);
@@ -138,7 +142,7 @@ export default function DashboardTable({
           <Search size={16} />
           <input
             type="text"
-            placeholder="Search registrations…"
+            placeholder="Search by serial #, dog, owner, phone, breed…"
             className={styles.searchInput}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}

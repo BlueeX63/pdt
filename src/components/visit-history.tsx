@@ -11,7 +11,7 @@ import {
   sendInvoiceNotification,
 } from "@/app/actions";
 import { AdmissionValues } from "@/lib/schemas";
-import { Plus, Trash2, Calendar, Loader2, Edit2, LogOut, LogIn, Clock, CheckCircle2, X, Share2, ShieldCheck, Copy, Check, MessageSquare, Mail, ExternalLink } from "lucide-react";
+import { Plus, Trash2, Calendar, Loader2, Edit2, LogOut, LogIn, Clock, CheckCircle2, X, Share2, ShieldCheck, Copy, Check, MessageSquare, Mail, ExternalLink, MessageCircle } from "lucide-react";
 
 interface Admission {
   id: string;
@@ -1028,24 +1028,34 @@ export default function VisitHistory({
                 )}
               </button>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.6rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
                 <a
                   href={`sms:${invoiceModalData.phone}?body=${encodeURIComponent(invoiceModalData.smsText)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", color: "var(--text-primary)", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 600, fontSize: "0.8rem", whiteSpace: "nowrap" }}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", color: "var(--text-primary)", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 600, fontSize: "0.85rem", whiteSpace: "nowrap" }}
                 >
-                  <MessageSquare size={15} className="text-blue-500" />
+                  <MessageSquare size={16} className="text-blue-500" />
                   SMS App
+                </a>
+
+                <a
+                  href={`https://wa.me/${(invoiceModalData.phone || "").replace(/\D/g, "").length === 10 ? "91" + (invoiceModalData.phone || "").replace(/\D/g, "") : (invoiceModalData.phone || "").replace(/\D/g, "")}?text=${encodeURIComponent(invoiceModalData.smsText)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", color: "var(--text-primary)", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 600, fontSize: "0.85rem", whiteSpace: "nowrap" }}
+                >
+                  <MessageCircle size={16} style={{ color: "#25D366" }} />
+                  WhatsApp
                 </a>
 
                 <a
                   href={invoiceModalData.email ? `mailto:${invoiceModalData.email}?subject=${encodeURIComponent(invoiceModalData.emailSubject)}&body=${encodeURIComponent(invoiceModalData.emailBody)}` : `mailto:?subject=${encodeURIComponent(invoiceModalData.emailSubject)}&body=${encodeURIComponent(invoiceModalData.emailBody)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", color: "var(--text-primary)", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 600, fontSize: "0.8rem", whiteSpace: "nowrap" }}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", color: "var(--text-primary)", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 600, fontSize: "0.85rem", whiteSpace: "nowrap" }}
                 >
-                  <Mail size={15} className="text-indigo-500" />
+                  <Mail size={16} className="text-indigo-500" />
                   Email App
                 </a>
 
@@ -1055,9 +1065,9 @@ export default function VisitHistory({
                     setCopiedLink(true);
                     setTimeout(() => setCopiedLink(false), 2000);
                   }}
-                  style={{ padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", borderRadius: "0.5rem", color: "var(--text-primary)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", fontWeight: 600, fontSize: "0.8rem", whiteSpace: "nowrap" }}
+                  style={{ padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", borderRadius: "0.5rem", color: "var(--text-primary)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", fontWeight: 600, fontSize: "0.85rem", whiteSpace: "nowrap" }}
                 >
-                  {copiedLink ? <Check size={15} className="text-emerald-500" /> : <Copy size={15} />}
+                  {copiedLink ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
                   {copiedLink ? "Copied!" : "Copy Text"}
                 </button>
               </div>

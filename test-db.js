@@ -1,7 +1,25 @@
+const fs = require('fs');
+const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
-const supabaseUrl = 'https://edxmalchjmimqjspukkz.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkeG1hbGNoam1pbXFqc3B1a2t6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NzEyODQsImV4cCI6MjA5ODI0NzI4NH0.BpIU1S2BmF6_8jJRQvgaS8efG0Qxc3RBCIpOBF8wyqE';
+try {
+  const envConfig = fs.readFileSync(path.resolve(__dirname, '.env.local'), 'utf8');
+  envConfig.split('\n').forEach(line => {
+    const match = line.match(/^([^=+#]+)=(.*)$/);
+    if (match) {
+      process.env[match[1].trim()] = match[2].trim().replace(/^["']|["']$/g, '');
+    }
+  });
+} catch (e) {
+  console.warn("Could not read .env.local");
+}
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+if (!supabaseUrl || !supabaseKey) {
+  console.error("Missing Supabase credentials in environment variables.");
+  process.exit(1);
+}
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function test() {

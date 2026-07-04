@@ -1,8 +1,10 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { AdmissionValues } from "@/lib/schemas";
+import { AdmissionValues, formSchema, admissionSchema } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
+import { env } from "@/lib/env";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 async function getNextSerialNumber(supabase: any) {
   const { data: allRegs } = await supabase.from("registrations").select("serial_number");
@@ -38,6 +40,11 @@ export async function createRegistration(payload: Record<string, unknown>) {
     return { error: "Unauthorized" };
   }
 
+  const parsed = formSchema.partial().safeParse(payload);
+  if (!parsed.success) {
+    return { error: "Invalid form data: " + parsed.error.issues.map(i => i.message).join(", ") };
+  }
+
   if (!payload.serial_number || typeof payload.serial_number !== "string" || payload.serial_number.trim() === "") {
     payload.serial_number = await getNextSerialNumber(supabase);
   } else {
@@ -68,7 +75,8 @@ export async function createRegistration(payload: Record<string, unknown>) {
   }
 
   if (error) {
-    return { error: error.message };
+    console.error("[DB ERROR]:", error);
+    return { error: "An unexpected error occurred while saving registration. Please try again." };
   }
 
   revalidatePath("/dashboard");
@@ -81,6 +89,11 @@ export async function updateRegistration(id: string, payload: Record<string, unk
 
   if (!user) {
     return { error: "Unauthorized" };
+  }
+
+  const parsed = formSchema.partial().safeParse(payload);
+  if (!parsed.success) {
+    return { error: "Invalid form data: " + parsed.error.issues.map(i => i.message).join(", ") };
   }
 
   if (!payload.serial_number || typeof payload.serial_number !== "string" || payload.serial_number.trim() === "") {
@@ -120,7 +133,8 @@ export async function updateRegistration(id: string, payload: Record<string, unk
   }
 
   if (error) {
-    return { error: error.message };
+    console.error("[DB ERROR]:", error);
+    return { error: "An unexpected error occurred while updating registration. Please try again." };
   }
 
   revalidatePath("/dashboard");
@@ -141,7 +155,8 @@ export async function deleteRegistration(id: string) {
     .eq("id", id);
 
   if (error) {
-    return { error: error.message };
+    console.error("[DB ERROR]:", error);
+    return { error: "An unexpected error occurred while deleting registration. Please try again." };
   }
 
   revalidatePath("/dashboard");
@@ -154,6 +169,11 @@ export async function createAdmission(payload: AdmissionValues) {
 
   if (!user) {
     return { error: "Unauthorized" };
+  }
+
+  const parsed = admissionSchema.partial().safeParse(payload);
+  if (!parsed.success) {
+    return { error: "Invalid admission data submitted." };
   }
 
   let { data, error } = await supabase
@@ -169,7 +189,8 @@ export async function createAdmission(payload: AdmissionValues) {
   }
 
   if (error) {
-    return { error: error.message };
+    console.error("[DB ERROR]:", error);
+    return { error: "An unexpected error occurred while saving admission. Please try again." };
   }
 
   revalidatePath("/dashboard");
@@ -184,6 +205,11 @@ export async function updateAdmission(id: string, payload: AdmissionValues) {
     return { error: "Unauthorized" };
   }
 
+  const parsed = admissionSchema.partial().safeParse(payload);
+  if (!parsed.success) {
+    return { error: "Invalid admission data submitted." };
+  }
+
   let { error } = await supabase
     .from("admissions")
     .update(payload)
@@ -196,7 +222,8 @@ export async function updateAdmission(id: string, payload: AdmissionValues) {
   }
 
   if (error) {
-    return { error: error.message };
+    console.error("[DB ERROR]:", error);
+    return { error: "An unexpected error occurred while updating admission. Please try again." };
   }
 
   revalidatePath("/dashboard");
@@ -217,7 +244,8 @@ export async function deleteAdmission(id: string) {
     .eq("id", id);
 
   if (error) {
-    return { error: error.message };
+    console.error("[DB ERROR]:", error);
+    return { error: "An unexpected error occurred while deleting admission. Please try again." };
   }
 
   revalidatePath("/dashboard");
@@ -238,10 +266,11 @@ export async function getAdmissions(registrationId: string) {
     .eq("registration_id", registrationId)
     .order("entry_date", { ascending: false });
 
-  console.log("getAdmissions called for:", registrationId, "Data:", data, "Error:", error);
+  console.log("getAdmissions called for:", registrationId);
 
   if (error) {
-    return { error: error.message };
+    console.error("[DB ERROR]:", error);
+    return { error: "An unexpected error occurred while fetching admissions." };
   }
 
   return { data };
@@ -265,7 +294,8 @@ export async function markAdmissionAsPaid(id: string, status: string = "PAID") {
   }
 
   if (error) {
-    return { error: error.message };
+    console.error("[DB ERROR]:", error);
+    return { error: "An unexpected error occurred while updating payment status." };
   }
 
   revalidatePath("/dashboard");
@@ -279,6 +309,11 @@ export async function sendInvoiceNotification(admissionId: string) {
 
   if (!user) {
     return { error: "Unauthorized" };
+  }
+
+  const rateLimit = checkRateLimit(`email_${user.id}`, 5, 60000);
+  if (!rateLimit.success) {
+    return { error: `Rate limit exceeded. Please wait ${rateLimit.reset} seconds before sending more notifications.` };
   }
 
   const { data: admission } = await supabase
@@ -311,9 +346,9 @@ export async function sendInvoiceNotification(admissionId: string) {
   const emailSubject = `Invoice ${invoiceNo} - Prakash Dog Training School`;
   const emailBody = `Hello ${reg.owner_name},\n\nHere are the invoice details for ${reg.dog_name}'s stay at Prakash Dog Training School:\n\nInvoice Number: ${invoiceNo}\nCheck-In: ${admission.entry_date}\nCheck-Out: ${admission.exit_date || "Present"}\n\nTotal Bill: Rs. ${totalBill.toLocaleString("en-IN")}\nAdvance Paid: Rs. ${advance.toLocaleString("en-IN")}\nRemaining Amount Due: Rs. ${amountDue.toLocaleString("en-IN")}\n\nThank you for choosing Prakash Dog Training School!\n\nBest regards,\nPrakash Dog Training School`;
 
-  const smsKey = process.env.SMS_PROVIDER_API_KEY?.trim();
-  const emailKey = process.env.EMAIL_PROVIDER_API_KEY?.trim();
-  const emailFrom = process.env.EMAIL_FROM?.trim() || "billing@prakashdogtraining.com";
+  const smsKey = env.SMS_PROVIDER_API_KEY?.trim();
+  const emailKey = env.EMAIL_PROVIDER_API_KEY?.trim();
+  const emailFrom = env.EMAIL_FROM?.trim() || "billing@prakashdogtraining.com";
 
   if (reg.email && emailKey && emailKey !== "placeholder_email_api_key") {
     try {
@@ -382,6 +417,10 @@ export async function sendInvoiceNotification(admissionId: string) {
 
 export async function getAdmissionWithRegistration(admissionId: string) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "Unauthorized access to invoice details." };
+  }
   const { data: admission, error: admErr } = await supabase
     .from("admissions")
     .select("*")
@@ -404,4 +443,21 @@ export async function getAdmissionWithRegistration(admissionId: string) {
 
   return { admission, registration: reg };
 }
+
+export async function loginWithRateLimit(email: string, pass: string) {
+  const rateLimit = checkRateLimit(`login_${email.toLowerCase()}`, 5, 300000);
+  if (!rateLimit.success) {
+    return { error: `Too many login attempts. Please wait ${rateLimit.reset} seconds before trying again.` };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password: pass,
+  });
+  if (error) {
+    return { error: error.message };
+  }
+  return { success: true };
+}
+
 

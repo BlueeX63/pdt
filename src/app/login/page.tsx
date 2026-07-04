@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff, PawPrint, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { loginWithRateLimit } from "@/app/actions";
 import styles from "./login.module.css";
 
 export default function LoginPage() {
@@ -15,20 +16,16 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
-  const supabase = createClient();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const res = await loginWithRateLimit(email, password);
 
-    if (error) {
-      setError(error.message);
+    if (res.error) {
+      setError(res.error);
       setIsLoading(false);
     } else {
       router.push("/dashboard");
