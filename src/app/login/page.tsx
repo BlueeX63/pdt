@@ -63,7 +63,7 @@ export default function LoginPage() {
             <div className={styles.logoIcon}>
               <PawPrint size={18} strokeWidth={2.5} />
             </div>
-            <span>Prakash Dog Training</span>
+            <span>Prakash Dog Training School</span>
           </div>
 
           <div className={styles.header}>

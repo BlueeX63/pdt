@@ -13,6 +13,9 @@ interface Admission {
   registration_id: string;
   entry_date: string;
   exit_date?: string | null;
+  payment_status?: string | null;
+  billed_amount?: number | null;
+  advance_amount?: number | null;
   [key: string]: unknown;
 }
 
@@ -31,6 +34,7 @@ interface Registration {
   colour?: string;
   dog_nature?: string;
   advance_amount?: number;
+  due_amount?: number | string;
   total_amount?: number;
   per_day_hostel_charges?: number | string;
   owner_photo?: string;
@@ -90,6 +94,30 @@ export default function DashboardTable({
     });
     const totalAmount = totalDays * perDayCharges;
     return { totalDays, totalAmount, stayCount: dogAdmissions.length };
+  };
+
+  const calculateTotalDue = (reg: Registration) => {
+    const baseDue = Number(reg.due_amount) || 0;
+    const dogAdmissions = initialAdmissions.filter((a) => a.registration_id === reg.id);
+    let unpaidStaysDue = 0;
+    dogAdmissions.forEach((a) => {
+      if (a.payment_status !== "PAID") {
+        const adv = Number(a.advance_amount) || 0;
+        if (a.billed_amount && Number(a.billed_amount) > 0) {
+          unpaidStaysDue += Math.max(0, Number(a.billed_amount) - adv);
+        } else if (a.exit_date) {
+          const startDate = new Date(a.entry_date);
+          startDate.setHours(0, 0, 0, 0);
+          const endDate = new Date(a.exit_date);
+          endDate.setHours(0, 0, 0, 0);
+          const diffTime = endDate.getTime() - startDate.getTime();
+          const diffDays = Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1);
+          const rate = Number(reg.per_day_hostel_charges) || 500;
+          unpaidStaysDue += Math.max(0, diffDays * rate - adv);
+        }
+      }
+    });
+    return baseDue + unpaidStaysDue;
   };
 
   const handleDelete = async (id: string) => {
@@ -168,6 +196,7 @@ export default function DashboardTable({
               <th className={styles.th}>Dog</th>
               <th className={styles.th}>Owner</th>
               <th className={styles.th}>Status</th>
+              <th className={styles.th}>Due Amount</th>
               <th className={styles.th}>Breed</th>
               <th className={styles.th}>Contact</th>
               <th className={styles.th}>Added</th>
@@ -177,7 +206,7 @@ export default function DashboardTable({
           <tbody>
             {filteredData.length === 0 ? (
               <tr>
-                <td colSpan={7}>
+                <td colSpan={8}>
                   <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>
                       <PawPrint size={28} />
@@ -243,6 +272,20 @@ export default function DashboardTable({
                     >
                       {item.status || "—"}
                     </span>
+                  </td>
+                  <td className={styles.td}>
+                    {(() => {
+                      const totalDue = calculateTotalDue(item);
+                      return totalDue > 0 ? (
+                        <span style={{ backgroundColor: "rgba(239, 68, 68, 0.15)", color: "#ef4444", padding: "0.25rem 0.6rem", borderRadius: "var(--radius-full)", fontSize: "0.75rem", fontWeight: 700, display: "inline-block" }}>
+                          &#8377;{totalDue.toLocaleString("en-IN")} Due
+                        </span>
+                      ) : (
+                        <span style={{ backgroundColor: "rgba(16, 185, 129, 0.15)", color: "#10b981", padding: "0.25rem 0.6rem", borderRadius: "var(--radius-full)", fontSize: "0.75rem", fontWeight: 600, display: "inline-block" }}>
+                          No Due
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className={styles.td}>{item.breed || "—"}</td>
                   <td className={styles.td}>{item.phone}</td>

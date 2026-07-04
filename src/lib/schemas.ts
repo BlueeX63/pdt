@@ -46,6 +46,10 @@ export const admissionSchema = z.object({
   exit_date: z.string().optional().nullable(),
   exit_time: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  payment_status: z.string().optional().nullable(),
+  invoice_no: z.string().optional().nullable(),
+  billed_amount: z.number().optional().nullable(),
+  advance_amount: z.number().optional().nullable(),
 });
 
 export type AdmissionValues = z.infer<typeof admissionSchema>;

@@ -459,11 +459,6 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
             />
 
             <div className={styles.formGroup}>
-              <label className={styles.label}>Dog Serial Number / ID</label>
-              <input {...register("serial_number")} className={styles.input} placeholder="e.g. #101 or Tag No." />
-            </div>
-
-            <div className={styles.formGroup}>
               <label className={styles.label}>Dog&apos;s Name *</label>
               <input {...register("dog_name")} className={styles.input} placeholder="Max" />
               {errors.dog_name && <span className={styles.error}>{errors.dog_name.message}</span>}
