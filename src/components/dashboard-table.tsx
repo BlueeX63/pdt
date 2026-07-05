@@ -27,6 +27,15 @@ interface Registration {
   status: string;
   breed?: string;
   phone: string;
+  email?: string | null;
+  address?: string | null;
+  landmark?: string | null;
+  emergency_contact?: string | null;
+  aadhar_card_no?: string | null;
+  vaccination_card?: string | null;
+  other_info?: string | null;
+  appointment_time?: string | null;
+  appointment_date?: string | null;
   city?: string;
   state?: string;
   dog_gender?: string;
@@ -141,7 +150,17 @@ export default function DashboardTable({
     if (res?.error) {
       setDeleteError(res.error);
     } else {
-      setData(data.filter((d) => d.id !== deleteModalItem.id));
+      const remaining = data.filter((d) => d.id !== deleteModalItem.id);
+      const sortedAsc = [...remaining].sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+      const serialMap = new Map<string, string>();
+      sortedAsc.forEach((item, idx) => {
+        serialMap.set(item.id, `#${idx + 1}`);
+      });
+      const reindexed = remaining.map((item) => ({
+        ...item,
+        serial_number: serialMap.get(item.id) || item.serial_number,
+      }));
+      setData(reindexed);
       setDeleteModalItem(null);
       if (selectedItem?.id === deleteModalItem.id) {
         setSelectedItem(null);
@@ -382,6 +401,33 @@ export default function DashboardTable({
               </div>
 
               <div className={styles.drawerContent}>
+                {/* Official Registration PDF Button */}
+                <div style={{ marginBottom: "1rem" }}>
+                  <a
+                    href={`/api/registration/${selectedItem.id}/pdf`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "0.5rem",
+                      width: "100%",
+                      padding: "0.75rem 1rem",
+                      backgroundColor: "var(--accent)",
+                      color: "white",
+                      borderRadius: "var(--radius-sm)",
+                      fontWeight: 700,
+                      fontSize: "0.875rem",
+                      textDecoration: "none",
+                      boxShadow: "var(--shadow-md)",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    📄 View / Print Official Registration Form PDF
+                  </a>
+                </div>
+
                 {/* Photo Previews */}
                 {selectedItem.dog_photo || selectedItem.owner_photo ? (
                   <div style={{ display: "grid", gridTemplateColumns: selectedItem.dog_photo && selectedItem.owner_photo ? "1fr 1fr" : "1fr", gap: "0.75rem", marginBottom: "0.5rem" }}>
@@ -572,7 +618,14 @@ export default function DashboardTable({
                 </div>
 
                 {/* Visit History Section */}
-                <VisitHistory registrationId={selectedItem.id} perDayCharges={Number(selectedItem.per_day_hostel_charges) || 0} />
+                <VisitHistory
+                  registrationId={selectedItem.id}
+                  perDayCharges={Number(selectedItem.per_day_hostel_charges) || 0}
+                  ownerName={selectedItem.owner_name}
+                  dogName={selectedItem.dog_name}
+                  phone={selectedItem.phone}
+                  email={selectedItem.email || ""}
+                />
               </div>
 
               <div className={styles.drawerFooter}>

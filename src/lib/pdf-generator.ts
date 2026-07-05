@@ -285,3 +285,167 @@ export function generateInvoicePDFBase64(admission: Admission, registration: Reg
   const base64 = dataUri.split(",")[1];
   return base64;
 }
+
+export function generateRegistrationPDFDoc(reg: any): jsPDF {
+  const doc = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4",
+  });
+
+  const primaryColor: [number, number, number] = [15, 23, 42]; // Navy Slate
+  const secondaryColor: [number, number, number] = [100, 116, 139]; // Slate Gray
+  const accentColor: [number, number, number] = [79, 70, 229]; // Indigo
+
+  // --- Header Section ---
+  doc.setFillColor(...primaryColor);
+  doc.rect(0, 0, 210, 40, "F");
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.text("Prakash Dog Training School", 14, 18);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(203, 213, 225);
+  doc.text("Professional Dog Training & Boarding Hostel Services", 14, 26);
+  doc.text("Contact: +91 98765 43210 | Location: India", 14, 32);
+
+  // Right side of Header
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text("REGISTRATION FORM", 196, 20, { align: "right" });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(203, 213, 225);
+  const serialNo = reg.serial_number ? (String(reg.serial_number).startsWith("#") ? String(reg.serial_number) : `#${reg.serial_number}`) : "New";
+  doc.text(`Serial No: ${serialNo}`, 196, 28, { align: "right" });
+
+  const regDate = reg.created_at ? new Date(reg.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  doc.text(`Date: ${regDate}`, 196, 34, { align: "right" });
+
+  let currentY = 50;
+
+  // Section 1: Owner Information Table
+  autoTable(doc, {
+    startY: currentY,
+    head: [["OWNER & CONTACT INFORMATION", "DETAILS"]],
+    body: [
+      ["Full Name", reg.owner_name || "N/A"],
+      ["Primary Phone", reg.phone || "N/A"],
+      ["Email Address", reg.email || "N/A"],
+      ["Emergency Contact", reg.emergency_contact || "N/A"],
+      ["Complete Address", `${reg.address || ""}${reg.landmark ? `, Near ${reg.landmark}` : ""}${reg.city ? `, ${reg.city}` : ""}${reg.state ? `, ${reg.state}` : ""}`],
+    ],
+    theme: "grid",
+    headStyles: { fillColor: primaryColor, textColor: [255, 255, 255], fontStyle: "bold", fontSize: 11 },
+    styles: { fontSize: 10, cellPadding: 4, textColor: [30, 41, 59] },
+    columnStyles: { 0: { fontStyle: "bold", cellWidth: 70, fillColor: [248, 250, 252] }, 1: { cellWidth: 112 } },
+    margin: { left: 14, right: 14 },
+  });
+
+  currentY = (doc as any).lastAutoTable.finalY + 10;
+
+  // Section 2: Dog Profile Table
+  autoTable(doc, {
+    startY: currentY,
+    head: [["PET PROFILE & CHARACTERISTICS", "DETAILS"]],
+    body: [
+      ["Pet Name", reg.dog_name || "N/A"],
+      ["Breed", reg.breed || "N/A"],
+      ["Gender", reg.dog_gender || "N/A"],
+      ["Age", reg.age || "N/A"],
+      ["Colour", reg.colour || "N/A"],
+      ["Dog Nature / Temperament", `${reg.dog_nature || "Unknown"} ${reg.dog_nature === "Green" ? "(Friendly)" : reg.dog_nature === "Orange" ? "(Cautious)" : reg.dog_nature === "Red" ? "(Aggressive)" : ""}`],
+    ],
+    theme: "grid",
+    headStyles: { fillColor: accentColor, textColor: [255, 255, 255], fontStyle: "bold", fontSize: 11 },
+    styles: { fontSize: 10, cellPadding: 4, textColor: [30, 41, 59] },
+    columnStyles: { 0: { fontStyle: "bold", cellWidth: 70, fillColor: [248, 250, 252] }, 1: { cellWidth: 112 } },
+    margin: { left: 14, right: 14 },
+  });
+
+  currentY = (doc as any).lastAutoTable.finalY + 10;
+
+  // Section 3: Services & Health Records Table
+  const servicesList = [];
+  if (reg.requires_hostel) servicesList.push("Dog Hostel / Boarding");
+  if (reg.requires_training) servicesList.push("Dog Training");
+  const servicesStr = servicesList.length > 0 ? servicesList.join(" & ") : "General Consultation / None";
+
+  autoTable(doc, {
+    startY: currentY,
+    head: [["SERVICES & HEALTH RECORDS", "DETAILS"]],
+    body: [
+      ["Services Requested", servicesStr],
+      ["Vaccination Card Details", reg.vaccination_card || "Not Provided"],
+      ["Main Behavioral / Training Issue", reg.dog_main_issue || "None Reported"],
+      ["Appointment Schedule", `${reg.appointment_date || "N/A"} ${reg.appointment_time || ""}`],
+      ["Per Day Hostel Charges", reg.per_day_hostel_charges ? `Rs. ${reg.per_day_hostel_charges}` : "Standard Rate"],
+    ],
+    theme: "grid",
+    headStyles: { fillColor: [16, 185, 129], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 11 },
+    styles: { fontSize: 10, cellPadding: 4, textColor: [30, 41, 59] },
+    columnStyles: { 0: { fontStyle: "bold", cellWidth: 70, fillColor: [248, 250, 252] }, 1: { cellWidth: 112 } },
+    margin: { left: 14, right: 14 },
+  });
+
+  currentY = (doc as any).lastAutoTable.finalY + 12;
+
+  // Section 4: Agreement & Signatures Box
+  if (currentY > 210) {
+    doc.addPage();
+    currentY = 25;
+  }
+
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, currentY, 182, 36, 3, 3, "FD");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...primaryColor);
+  doc.text("DECLARATION & TERMS OF ADMISSION:", 18, currentY + 7);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...secondaryColor);
+  doc.text("1. I certify that my pet is vaccinated against Rabies, DHPPI, and viral infections as stated above.", 18, currentY + 13);
+  doc.text("2. Prakash Dog Training School will take utmost care, but is not liable for unavoidable natural illnesses.", 18, currentY + 18);
+  doc.text("3. Boarding and training charges must be settled as per school guidelines upon check-out or billing.", 18, currentY + 23);
+
+  // Signatures
+  const sigY = currentY + 31;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...primaryColor);
+  doc.text("_________________________", 30, sigY);
+  doc.text("Pet Owner's Signature", 35, sigY + 4);
+
+  doc.text("_________________________", 135, sigY);
+  doc.text("School Authority Signature", 137, sigY + 4);
+
+  // Footer
+  const footerY = 275;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(148, 163, 184);
+  doc.text("Prakash Dog Training School Official Portal | Stay Connected: Instagram @dogloverprakash | YouTube @dogloverprakash", 105, footerY, { align: "center" });
+
+  return doc;
+}
+
+export function generateRegistrationPDFBuffer(reg: any): Buffer {
+  const doc = generateRegistrationPDFDoc(reg);
+  const arrayBuffer = doc.output("arraybuffer");
+  return Buffer.from(arrayBuffer);
+}
+
+export function generateRegistrationPDFBase64(reg: any): string {
+  const doc = generateRegistrationPDFDoc(reg);
+  const dataUri = doc.output("datauristring");
+  return dataUri.split(",")[1];
+}

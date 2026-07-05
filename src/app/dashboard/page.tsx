@@ -4,9 +4,11 @@ import DashboardStats from "@/components/dashboard-stats";
 import styles from "./dashboard.module.css";
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import { resequenceSerialNumbers } from "@/app/actions";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
+  await resequenceSerialNumbers(supabase);
   const { data: registrations } = await supabase
     .from("registrations")
     .select("*")

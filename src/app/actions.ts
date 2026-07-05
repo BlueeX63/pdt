@@ -7,30 +7,29 @@ import { env } from "@/lib/env";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { generateInvoicePDFBase64 } from "@/lib/pdf-generator";
 
+export async function resequenceSerialNumbers(supabase: any) {
+  const { data: allRegs, error } = await supabase
+    .from("registrations")
+    .select("id, serial_number, created_at")
+    .order("created_at", { ascending: true });
+
+  if (error || !allRegs || allRegs.length === 0) return;
+
+  for (let i = 0; i < allRegs.length; i++) {
+    const expectedSerial = `#${i + 1}`;
+    if (allRegs[i].serial_number !== expectedSerial) {
+      await supabase
+        .from("registrations")
+        .update({ serial_number: expectedSerial })
+        .eq("id", allRegs[i].id);
+    }
+  }
+}
+
 async function getNextSerialNumber(supabase: any) {
-  const { data: allRegs } = await supabase.from("registrations").select("serial_number");
-  let maxSerialNum = 0;
-  let hasAnyNumeric = false;
-  if (allRegs && allRegs.length > 0) {
-    allRegs.forEach((reg: { serial_number?: string }) => {
-      if (reg.serial_number && typeof reg.serial_number === "string") {
-        const match = reg.serial_number.match(/\d+/);
-        if (match) {
-          const num = parseInt(match[0], 10);
-          if (!isNaN(num)) {
-            hasAnyNumeric = true;
-            if (num > maxSerialNum) {
-              maxSerialNum = num;
-            }
-          }
-        }
-      }
-    });
-  }
-  if (!hasAnyNumeric) {
-    maxSerialNum = 100;
-  }
-  return `#${maxSerialNum + 1}`;
+  await resequenceSerialNumbers(supabase);
+  const { count } = await supabase.from("registrations").select("id", { count: "exact", head: true });
+  return `#${(count || 0) + 1}`;
 }
 
 export async function createRegistration(payload: Record<string, unknown>) {
@@ -159,6 +158,8 @@ export async function deleteRegistration(id: string) {
     console.error("[DB ERROR]:", error);
     return { error: "An unexpected error occurred while deleting registration. Please try again." };
   }
+
+  await resequenceSerialNumbers(supabase);
 
   revalidatePath("/dashboard");
   return { success: true };
@@ -347,12 +348,12 @@ export async function sendInvoiceNotification(admissionId: string) {
   const facebookLink = "https://www.facebook.com/share/1dJmCWUsCp/?mibextid=wwXIfr";
   const youtubeLink = "https://youtube.com/@dogloverprakash?si=rZxEGxDLMilMQomC";
 
-  const smsText = `Hello ${reg.owner_name},\nInvoice ${invoiceNo} for ${reg.dog_name}'s stay at Prakash Dog Training School is ready.\nTotal: Rs. ${totalBill.toLocaleString("en-IN")} | Advance: Rs. ${advance.toLocaleString("en-IN")} | Due: Rs. ${amountDue.toLocaleString("en-IN")}\n\nStay connected with us:\n- Instagram: ${instagramLink}\n- Facebook: ${facebookLink}\n- YouTube: ${youtubeLink}\n\nThank you!`;
-
-  const instagramText = `Hello ${reg.owner_name}!\nHere is the invoice summary for ${reg.dog_name}'s stay at Prakash Dog Training School:\n\nInvoice: ${invoiceNo}\nTotal Bill: Rs. ${totalBill.toLocaleString("en-IN")}\nAdvance: Rs. ${advance.toLocaleString("en-IN")}\nRemaining Due: Rs. ${amountDue.toLocaleString("en-IN")}\n\nStay connected with us:\n- Instagram: ${instagramLink}\n- Facebook: ${facebookLink}\n- YouTube: ${youtubeLink}\n\nThank you for choosing us!`;
-
   const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://prakashdogtraining.com";
   const pdfUrl = `${appUrl}/api/invoice/${admission.id}/pdf`;
+
+  const smsText = `🐾 *PRAKASH DOG TRAINING SCHOOL* 🐾\n━━━━━━━━━━━━━━━━━━━━\n📄 *OFFICIAL INVOICE & BILL*\n\n👤 *Owner:* ${reg.owner_name}\n🐶 *Pet Name:* ${reg.dog_name}${reg.breed ? ` (${reg.breed})` : ""}\n🏷️ *Invoice No:* ${invoiceNo}\n📅 *Check-In:* ${admission.entry_date}\n📅 *Check-Out:* ${admission.exit_date || "Present"}\n\n━━━━━━━━━━━━━━━━━━━━\n💰 *BILLING SUMMARY*\n━━━━━━━━━━━━━━━━━━━━\n• Total Stay Charges: *Rs. ${totalBill.toLocaleString("en-IN")}*\n• Advance Paid: *Rs. ${advance.toLocaleString("en-IN")}*\n────────────────────\n💵 *NET AMOUNT DUE: Rs. ${amountDue.toLocaleString("en-IN")}*\n━━━━━━━━━━━━━━━━━━━━\n\n📄 *View / Download Official PDF Bill:*\n${pdfUrl}\n\n⭐ *Stay Connected & Watch Training Videos:*\n• Instagram: ${instagramLink}\n• Facebook: ${facebookLink}\n• YouTube: ${youtubeLink}\n\n🙏 *Thank you for choosing Prakash Dog Training School!*`;
+
+  const instagramText = `🐾 *PRAKASH DOG TRAINING SCHOOL* 🐾\n━━━━━━━━━━━━━━━━━━━━\n📄 *OFFICIAL INVOICE SUMMARY*\n\n👤 *Owner:* ${reg.owner_name}\n🐶 *Pet Name:* ${reg.dog_name}${reg.breed ? ` (${reg.breed})` : ""}\n🏷️ *Invoice No:* ${invoiceNo}\n📅 *Check-In:* ${admission.entry_date}\n📅 *Check-Out:* ${admission.exit_date || "Present"}\n\n━━━━━━━━━━━━━━━━━━━━\n💰 *BILLING SUMMARY*\n━━━━━━━━━━━━━━━━━━━━\n• Total Stay Charges: *Rs. ${totalBill.toLocaleString("en-IN")}*\n• Advance Paid: *Rs. ${advance.toLocaleString("en-IN")}*\n────────────────────\n💵 *NET AMOUNT DUE: Rs. ${amountDue.toLocaleString("en-IN")}*\n━━━━━━━━━━━━━━━━━━━━\n\n📄 *View / Download Official PDF Bill:*\n${pdfUrl}\n\n⭐ *Stay Connected & Watch Training Videos:*\n• Instagram: ${instagramLink}\n• Facebook: ${facebookLink}\n• YouTube: ${youtubeLink}\n\n🙏 *Thank you for choosing Prakash Dog Training School!*`;
   const emailSubject = `Invoice ${invoiceNo} - Prakash Dog Training School`;
   const emailBody = `Hello ${reg.owner_name},\n\nHere are the invoice details for ${reg.dog_name}'s stay at Prakash Dog Training School:\n\nInvoice Number: ${invoiceNo}\nCheck-In: ${admission.entry_date}\nCheck-Out: ${admission.exit_date || "Present"}\n\nFinancial Summary:\n- Total Bill: Rs. ${totalBill.toLocaleString("en-IN")}\n- Advance Paid: Rs. ${advance.toLocaleString("en-IN")}\n- Remaining Amount Due: Rs. ${amountDue.toLocaleString("en-IN")}\n\n📄 View / Download Official PDF Invoice Online:\n${pdfUrl}\n\n(If supported by your email client, your official PDF invoice is also attached to this email for your records.)\n\nStay Connected & Watch Our Dog Training Videos!\nWe regularly share training tips, adorable moments, and progress videos of our furry guests:\n- Instagram: ${instagramLink}\n- Facebook: ${facebookLink}\n- YouTube: ${youtubeLink}\n\nThank you for trusting Prakash Dog Training School with ${reg.dog_name}!\n\nBest regards,\nPrakash Dog Training School`;
 

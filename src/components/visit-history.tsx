@@ -67,12 +67,29 @@ const formatTime = (timeStr?: string | null) => {
 export default function VisitHistory({
   registrationId,
   perDayCharges = 0,
+  ownerName = "",
+  dogName = "",
+  phone = "",
+  email = "",
 }: {
   registrationId: string;
   perDayCharges?: number;
+  ownerName?: string;
+  dogName?: string;
+  phone?: string;
+  email?: string | null;
 }) {
   const [admissions, setAdmissions] = useState<Admission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [paymentModalData, setPaymentModalData] = useState<{
+    id: string;
+    invoiceNo: string;
+    totalBill: number;
+    ownerName: string;
+    dogName: string;
+    phone: string;
+    email: string;
+  } | null>(null);
   
   const [isAdding, setIsAdding] = useState(false);
   const [entryDate, setEntryDate] = useState("");
@@ -190,6 +207,18 @@ export default function VisitHistory({
           autoDispatchMsg: notif.autoDispatchMsg || `Invoice automatically sent to SMS (${notif.phone}) and Email (${notif.email || "N/A"})`,
         });
       }
+    } else if (newStatusVal === "PAID" && res?.data?.id) {
+      const days = calculateDays(entryDate, exitDate);
+      const totalBill = days * perDayCharges;
+      setPaymentModalData({
+        id: res.data.id,
+        invoiceNo: `INV-${res.data.id.slice(0, 8).toUpperCase()}`,
+        totalBill: totalBill,
+        ownerName: ownerName || "Pet Owner",
+        dogName: dogName || "your dog",
+        phone: phone || "",
+        email: email || "",
+      });
     }
 
     setIsAdding(false);
@@ -272,6 +301,7 @@ export default function VisitHistory({
     const visit = admissions.find((a) => a.id === id);
     const invNo = visit?.invoice_no || `INV-${id.slice(0, 8).toUpperCase()}`;
     const newStatus = editStatus;
+    const oldStatus = visit?.payment_status;
     const isPaidEdit = newStatus === "PAID" || newStatus?.toLowerCase() === "paid";
 
     const payload: AdmissionValues = {
@@ -313,6 +343,16 @@ export default function VisitHistory({
           autoDispatchMsg: notif.autoDispatchMsg || `Invoice automatically sent to SMS (${notif.phone}) and Email (${notif.email || "N/A"})`,
         });
       }
+    } else if (newStatus === "PAID" && oldStatus !== "PAID") {
+      setPaymentModalData({
+        id: id,
+        invoiceNo: invNo,
+        totalBill: amount,
+        ownerName: ownerName || "Pet Owner",
+        dogName: dogName || "your dog",
+        phone: phone || "",
+        email: email || "",
+      });
     }
 
     setEditingId(null);
@@ -389,6 +429,20 @@ export default function VisitHistory({
       alert(res.error);
     } else {
       fetchAdmissions();
+      if (newStatus === "PAID") {
+        const days = calculateDays(visit.entry_date, visit.exit_date);
+        const totalBill = Number(visit.billed_amount) || days * perDayCharges;
+        const invNo = visit.invoice_no || `INV-${visit.id.slice(0, 8).toUpperCase()}`;
+        setPaymentModalData({
+          id: visit.id,
+          invoiceNo: invNo,
+          totalBill: totalBill,
+          ownerName: ownerName || "Pet Owner",
+          dogName: dogName || "your dog",
+          phone: phone || "",
+          email: email || "",
+        });
+      }
     }
   };
 
@@ -1016,7 +1070,7 @@ export default function VisitHistory({
       {/* Invoice Generated & Share Modal */}
       {invoiceModalData && (
         <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.75)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 60, padding: "1rem" }}>
-          <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-primary)", borderRadius: "1rem", width: "100%", maxWidth: "460px", padding: "1.75rem", position: "relative", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)" }}>
+          <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-primary)", borderRadius: "1rem", width: "100%", maxWidth: "520px", padding: "1.75rem", position: "relative", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)", boxSizing: "border-box" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
               <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: 0, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
                 <ShieldCheck size={22} className="text-emerald-500" />
@@ -1038,7 +1092,7 @@ export default function VisitHistory({
               </div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", marginBottom: "1.25rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", marginBottom: "1.25rem" }}>
               <button
                 onClick={async () => {
                   setResendingAuto(true);
@@ -1048,12 +1102,12 @@ export default function VisitHistory({
                   setTimeout(() => setResendSuccess(false), 3000);
                 }}
                 disabled={resendingAuto}
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.6rem", padding: "0.85rem", backgroundColor: "var(--accent)", color: "#ffffff", borderRadius: "0.5rem", border: "none", cursor: "pointer", fontWeight: 600, fontSize: "0.95rem", boxShadow: "var(--shadow-sm)" }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.6rem", padding: "0.85rem", backgroundColor: "var(--accent)", color: "#ffffff", borderRadius: "0.5rem", border: "none", cursor: "pointer", fontWeight: 600, fontSize: "0.95rem", width: "100%", boxSizing: "border-box", boxShadow: "var(--shadow-sm)" }}
               >
                 {resendingAuto ? (
                   <>
                     <Loader2 size={18} className="animate-spin" />
-                    Sending Email...
+                    <span>Sending Email...</span>
                   </>
                 ) : resendSuccess ? (
                   <>
@@ -1063,30 +1117,30 @@ export default function VisitHistory({
                 ) : (
                   <>
                     <Share2 size={18} />
-                    Send Automatic Email
+                    <span>Send Automatic Email</span>
                   </>
                 )}
               </button>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
-                <a
-                  href={`/api/invoice/${invoiceModalData.id}/pdf`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", padding: "0.85rem 0.5rem", backgroundColor: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.4)", color: "#10b981", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 700, fontSize: "0.9rem", whiteSpace: "nowrap", gridColumn: "span 2", boxShadow: "var(--shadow-xs)" }}
-                >
-                  <FileText size={18} />
-                  Download / Print PDF Invoice
-                </a>
+              <a
+                href={`/api/invoice/${invoiceModalData.id}/pdf`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", padding: "0.85rem 0.5rem", backgroundColor: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.4)", color: "#10b981", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 700, fontSize: "0.95rem", width: "100%", boxSizing: "border-box", boxShadow: "var(--shadow-xs)" }}
+              >
+                <FileText size={18} />
+                <span>Download / Print PDF Invoice</span>
+              </a>
 
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.65rem", marginTop: "0.25rem" }}>
                 <a
                   href={`sms:${invoiceModalData.phone}?body=${encodeURIComponent(invoiceModalData.smsText)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", color: "var(--text-primary)", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 600, fontSize: "0.85rem", whiteSpace: "nowrap" }}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", color: "var(--text-primary)", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 600, fontSize: "0.85rem", textAlign: "center", boxSizing: "border-box" }}
                 >
-                  <MessageSquare size={16} className="text-blue-500" />
-                  SMS App
+                  <MessageSquare size={16} className="text-blue-500" style={{ flexShrink: 0 }} />
+                  <span>SMS App</span>
                 </a>
 
                 <a
@@ -1104,10 +1158,10 @@ export default function VisitHistory({
                       console.log("Silent clipboard copy failed:", err);
                     }
                   }}
-                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", color: "var(--text-primary)", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 600, fontSize: "0.85rem", whiteSpace: "nowrap" }}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", color: "var(--text-primary)", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 600, fontSize: "0.85rem", textAlign: "center", boxSizing: "border-box" }}
                 >
-                  <MessageCircle size={16} style={{ color: "#25D366" }} />
-                  WhatsApp
+                  <MessageCircle size={16} style={{ color: "#25D366", flexShrink: 0 }} />
+                  <span>WhatsApp</span>
                 </a>
 
                 <a
@@ -1123,10 +1177,10 @@ export default function VisitHistory({
                     link.click();
                     document.body.removeChild(link);
                   }}
-                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", color: "var(--text-primary)", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 600, fontSize: "0.85rem", whiteSpace: "nowrap" }}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", color: "var(--text-primary)", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 600, fontSize: "0.85rem", textAlign: "center", boxSizing: "border-box" }}
                 >
-                  <Mail size={16} className="text-indigo-500" />
-                  Email App (Send + Download PDF)
+                  <Mail size={16} className="text-indigo-500" style={{ flexShrink: 0 }} />
+                  <span>Email App (+ PDF)</span>
                 </a>
 
                 <button
@@ -1135,10 +1189,10 @@ export default function VisitHistory({
                     setCopiedLink(true);
                     setTimeout(() => setCopiedLink(false), 2000);
                   }}
-                  style={{ padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", borderRadius: "0.5rem", color: "var(--text-primary)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", fontWeight: 600, fontSize: "0.85rem", whiteSpace: "nowrap" }}
+                  style={{ padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", borderRadius: "0.5rem", color: "var(--text-primary)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", fontWeight: 600, fontSize: "0.85rem", textAlign: "center", width: "100%", boxSizing: "border-box" }}
                 >
-                  {copiedLink ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
-                  {copiedLink ? "Copied All Text & Links!" : "Copy Full Text & Links"}
+                  {copiedLink ? <Check size={16} className="text-emerald-500" style={{ flexShrink: 0 }} /> : <Copy size={16} style={{ flexShrink: 0 }} />}
+                  <span>{copiedLink ? "Copied!" : "Copy Text & Links"}</span>
                 </button>
               </div>
             </div>
@@ -1211,6 +1265,96 @@ export default function VisitHistory({
                 }}
               >
                 {isDeletingVisit ? "Deleting..." : "Yes, Delete Stay"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Received Confirmation Modal */}
+      {paymentModalData && (
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.75)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 90, padding: "1rem" }}>
+          <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-primary)", borderRadius: "1rem", width: "100%", maxWidth: "520px", padding: "1.75rem", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)", position: "relative", maxHeight: "90vh", overflowY: "auto", boxSizing: "border-box" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
+              <div style={{ width: "46px", height: "46px", borderRadius: "50%", backgroundColor: "rgba(16, 185, 129, 0.2)", color: "#10b981", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <CheckCircle2 size={26} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: "1.25rem", fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>
+                  🎉 Payment Received!
+                </h3>
+                <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", margin: 0, marginTop: "0.15rem" }}>
+                  Status updated to <strong style={{ color: "#10b981" }}>PAID</strong>. Send confirmation receipt to owner?
+                </p>
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: "var(--bg-primary)", padding: "1rem", borderRadius: "0.75rem", border: "1px solid var(--border-primary)", marginBottom: "1.25rem" }}>
+              <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-tertiary)", textTransform: "uppercase", marginBottom: "0.5rem", display: "flex", justifyContent: "space-between" }}>
+                <span>Message Preview</span>
+                <span>{paymentModalData.ownerName || "Pet Owner"} ({paymentModalData.phone || "No Phone"})</span>
+              </div>
+              <pre style={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontFamily: "inherit", whiteSpace: "pre-wrap", margin: 0, lineHeight: "1.5" }}>
+{`🐾 *PRAKASH DOG TRAINING SCHOOL* 🐾
+━━━━━━━━━━━━━━━━━━━━
+✅ *PAYMENT RECEIVED*
+
+Dear ${paymentModalData.ownerName || "Pet Owner"},
+We have successfully received the payment for ${paymentModalData.dogName || "your dog"}'s stay / training services (Invoice: ${paymentModalData.invoiceNo}).
+
+Total Amount Settled: *Rs. ${paymentModalData.totalBill.toLocaleString("en-IN")}*
+Status: *PAID IN FULL* 🟢
+
+🙏 Thank you for choosing Prakash Dog Training School! We wish you and ${paymentModalData.dogName || "your furry friend"} a wonderful day!
+
+⭐ *Stay Connected & Watch Our Dog Training Videos:*
+• Instagram: https://www.instagram.com/dogloverprakash?utm_source=qr
+• Facebook: https://www.facebook.com/share/1dJmCWUsCp/?mibextid=wwXIfr
+• YouTube: https://youtube.com/@dogloverprakash?si=rZxEGxDLMilMQomC
+
+Warm regards,
+*Prakash Dog Training School*`}
+              </pre>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.75rem", marginBottom: "1rem" }}>
+              <a
+                href={`https://wa.me/${(paymentModalData.phone || "").replace(/\D/g, "").length === 10 ? "91" + (paymentModalData.phone || "").replace(/\D/g, "") : (paymentModalData.phone || "").replace(/\D/g, "")}?text=${encodeURIComponent(`🐾 *PRAKASH DOG TRAINING SCHOOL* 🐾\n━━━━━━━━━━━━━━━━━━━━\n✅ *PAYMENT RECEIVED*\n\nDear ${paymentModalData.ownerName || "Pet Owner"},\nWe have successfully received the payment for ${paymentModalData.dogName || "your dog"}'s stay / training services (Invoice: ${paymentModalData.invoiceNo}).\n\nTotal Amount Settled: *Rs. ${paymentModalData.totalBill.toLocaleString("en-IN")}*\nStatus: *PAID IN FULL* 🟢\n\n🙏 Thank you for choosing Prakash Dog Training School! We wish you and ${paymentModalData.dogName || "your furry friend"} a wonderful day!\n\n⭐ *Stay Connected & Watch Our Dog Training Videos:*\n• Instagram: https://www.instagram.com/dogloverprakash?utm_source=qr\n• Facebook: https://www.facebook.com/share/1dJmCWUsCp/?mibextid=wwXIfr\n• YouTube: https://youtube.com/@dogloverprakash?si=rZxEGxDLMilMQomC\n\nWarm regards,\n*Prakash Dog Training School*`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", padding: "0.85rem", backgroundColor: "#25D366", color: "#ffffff", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 700, fontSize: "0.9rem", boxShadow: "0 4px 6px -1px rgba(37, 211, 102, 0.3)", boxSizing: "border-box" }}
+              >
+                <MessageCircle size={18} />
+                Send via WhatsApp
+              </a>
+
+              <a
+                href={`sms:${paymentModalData.phone}?body=${encodeURIComponent(`🐾 *PRAKASH DOG TRAINING SCHOOL* 🐾\n━━━━━━━━━━━━━━━━━━━━\n✅ *PAYMENT RECEIVED*\n\nDear ${paymentModalData.ownerName || "Pet Owner"},\nWe have successfully received the payment for ${paymentModalData.dogName || "your dog"}'s stay / training services (Invoice: ${paymentModalData.invoiceNo}).\n\nTotal Amount Settled: *Rs. ${paymentModalData.totalBill.toLocaleString("en-IN")}*\nStatus: *PAID IN FULL* 🟢\n\n🙏 Thank you for choosing Prakash Dog Training School! We wish you and ${paymentModalData.dogName || "your furry friend"} a wonderful day!\n\n⭐ *Stay Connected & Watch Our Dog Training Videos:*\n• Instagram: https://www.instagram.com/dogloverprakash?utm_source=qr\n• Facebook: https://www.facebook.com/share/1dJmCWUsCp/?mibextid=wwXIfr\n• YouTube: https://youtube.com/@dogloverprakash?si=rZxEGxDLMilMQomC\n\nWarm regards,\n*Prakash Dog Training School*`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", padding: "0.85rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", color: "var(--text-primary)", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 700, fontSize: "0.9rem", boxSizing: "border-box" }}
+              >
+                <MessageSquare size={18} className="text-blue-500" />
+                Send via SMS App
+              </a>
+
+              <a
+                href={paymentModalData.email ? `mailto:${paymentModalData.email}?subject=${encodeURIComponent("Payment Received Confirmation - Prakash Dog Training School")}&body=${encodeURIComponent(`Dear ${paymentModalData.ownerName || "Pet Owner"},\n\nWe have successfully received the payment for ${paymentModalData.dogName || "your dog"}'s stay & training services (Invoice: ${paymentModalData.invoiceNo}).\n\nTotal Amount Settled: Rs. ${paymentModalData.totalBill.toLocaleString("en-IN")}\nStatus: PAID IN FULL\n\nThank you for choosing Prakash Dog Training School! We wish you and ${paymentModalData.dogName || "your furry friend"} a wonderful day!\n\nStay Connected & Watch Our Dog Training Videos:\n• Instagram: https://www.instagram.com/dogloverprakash\n• YouTube: https://youtube.com/@dogloverprakash\n\nWarm regards,\nPrakash Dog Training School`)}` : `mailto:?subject=${encodeURIComponent("Payment Received Confirmation - Prakash Dog Training School")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", padding: "0.85rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", color: "var(--text-primary)", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 700, fontSize: "0.9rem", gridColumn: "span 2", boxSizing: "border-box" }}
+              >
+                <Mail size={18} className="text-indigo-500" />
+                Send via Email App
+              </a>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", borderTop: "1px solid var(--border-primary)", paddingTop: "1rem" }}>
+              <button
+                onClick={() => setPaymentModalData(null)}
+                style={{ padding: "0.6rem 1.5rem", backgroundColor: "var(--bg-tertiary)", border: "1px solid var(--border-primary)", borderRadius: "0.5rem", color: "var(--text-primary)", cursor: "pointer", fontWeight: 700, fontSize: "0.9rem" }}
+              >
+                Done / No Thanks
               </button>
             </div>
           </div>
