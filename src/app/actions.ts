@@ -5,6 +5,7 @@ import { AdmissionValues, formSchema, admissionSchema } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
 import { env } from "@/lib/env";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { generateInvoicePDFBase64 } from "@/lib/pdf-generator";
 
 async function getNextSerialNumber(supabase: any) {
   const { data: allRegs } = await supabase.from("registrations").select("serial_number");
@@ -351,7 +352,14 @@ export async function sendInvoiceNotification(admissionId: string) {
   const instagramText = `Hello ${reg.owner_name}!\nHere is the invoice summary for ${reg.dog_name}'s stay at Prakash Dog Training School:\n\nInvoice: ${invoiceNo}\nTotal Bill: Rs. ${totalBill.toLocaleString("en-IN")}\nAdvance: Rs. ${advance.toLocaleString("en-IN")}\nRemaining Due: Rs. ${amountDue.toLocaleString("en-IN")}\n\nStay connected with us:\n- Instagram: ${instagramLink}\n- Facebook: ${facebookLink}\n- YouTube: ${youtubeLink}\n\nThank you for choosing us!`;
 
   const emailSubject = `Invoice ${invoiceNo} - Prakash Dog Training School`;
-  const emailBody = `Hello ${reg.owner_name},\n\nHere are the invoice details for ${reg.dog_name}'s stay at Prakash Dog Training School:\n\nInvoice Number: ${invoiceNo}\nCheck-In: ${admission.entry_date}\nCheck-Out: ${admission.exit_date || "Present"}\n\nFinancial Summary:\n- Total Bill: Rs. ${totalBill.toLocaleString("en-IN")}\n- Advance Paid: Rs. ${advance.toLocaleString("en-IN")}\n- Remaining Amount Due: Rs. ${amountDue.toLocaleString("en-IN")}\n\nStay Connected & Watch Our Dog Training Videos!\nWe regularly share training tips, adorable moments, and progress videos of our furry guests:\n- Instagram: ${instagramLink}\n- Facebook: ${facebookLink}\n- YouTube: ${youtubeLink}\n\nThank you for trusting Prakash Dog Training School with ${reg.dog_name}!\n\nBest regards,\nPrakash Dog Training School`;
+  const emailBody = `Hello ${reg.owner_name},\n\nHere are the invoice details for ${reg.dog_name}'s stay at Prakash Dog Training School:\n\nInvoice Number: ${invoiceNo}\nCheck-In: ${admission.entry_date}\nCheck-Out: ${admission.exit_date || "Present"}\n\nFinancial Summary:\n- Total Bill: Rs. ${totalBill.toLocaleString("en-IN")}\n- Advance Paid: Rs. ${advance.toLocaleString("en-IN")}\n- Remaining Amount Due: Rs. ${amountDue.toLocaleString("en-IN")}\n\nPlease find attached your official PDF invoice for your records.\n\nStay Connected & Watch Our Dog Training Videos!\nWe regularly share training tips, adorable moments, and progress videos of our furry guests:\n- Instagram: ${instagramLink}\n- Facebook: ${facebookLink}\n- YouTube: ${youtubeLink}\n\nThank you for trusting Prakash Dog Training School with ${reg.dog_name}!\n\nBest regards,\nPrakash Dog Training School`;
+
+  let pdfBase64 = "";
+  try {
+    pdfBase64 = generateInvoicePDFBase64(admission, reg);
+  } catch (pdfErr) {
+    console.error("[PDF GENERATION ERROR]:", pdfErr);
+  }
 
   const smsKey = env.SMS_PROVIDER_API_KEY?.trim();
   const emailKey = env.EMAIL_PROVIDER_API_KEY?.trim();
@@ -372,6 +380,14 @@ export async function sendInvoiceNotification(admissionId: string) {
             to: [{ email: reg.email, name: reg.owner_name || "Valued Client" }],
             subject: emailSubject,
             textContent: emailBody,
+            ...(pdfBase64 ? {
+              attachment: [
+                {
+                  name: `Invoice-${invoiceNo}.pdf`,
+                  content: pdfBase64,
+                },
+              ],
+            } : {}),
           }),
         });
         const resData = await res.json().catch(() => ({}));
@@ -388,6 +404,14 @@ export async function sendInvoiceNotification(admissionId: string) {
             to: [reg.email],
             subject: emailSubject,
             text: emailBody,
+            ...(pdfBase64 ? {
+              attachments: [
+                {
+                  filename: `Invoice-${invoiceNo}.pdf`,
+                  content: pdfBase64,
+                },
+              ],
+            } : {}),
           }),
         });
         const resData = await res.json().catch(() => ({}));
@@ -426,10 +450,6 @@ export async function sendInvoiceNotification(admissionId: string) {
 
 export async function getAdmissionWithRegistration(admissionId: string) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return { error: "Unauthorized access to invoice details." };
-  }
   const { data: admission, error: admErr } = await supabase
     .from("admissions")
     .select("*")

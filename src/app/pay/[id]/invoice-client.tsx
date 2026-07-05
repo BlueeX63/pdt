@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PawPrint, CheckCircle2, ShieldCheck, CreditCard, QrCode, Smartphone, X, Loader2 } from "lucide-react";
+import { PawPrint, CheckCircle2, ShieldCheck, CreditCard, QrCode, Smartphone, X, Loader2, FileText } from "lucide-react";
 import styles from "./page.module.css";
 import { markAdmissionAsPaid } from "@/app/actions";
 
@@ -177,6 +177,32 @@ export default function InvoicePaymentClient({
               </p>
             </div>
           )}
+
+          <div style={{ marginTop: "1.5rem", borderTop: "1px solid var(--border-primary)", paddingTop: "1.25rem", display: "flex", justifyContent: "center" }}>
+            <a
+              href={`/api/invoice/${admission.id}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.75rem 1.5rem",
+                backgroundColor: "rgba(16, 185, 129, 0.15)",
+                border: "1.5px solid rgba(16, 185, 129, 0.4)",
+                color: "#10b981",
+                borderRadius: "0.75rem",
+                textDecoration: "none",
+                fontWeight: 700,
+                fontSize: "0.95rem",
+                transition: "all 0.2s ease",
+                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+              }}
+            >
+              <FileText size={18} />
+              Download Official PDF Invoice
+            </a>
+          </div>
         </div>
       </div>
 

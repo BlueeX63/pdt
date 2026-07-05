@@ -31,7 +31,10 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const isPublicRoute = ['/login', '/'].includes(request.nextUrl.pathname);
+  const isPublicRoute =
+    ['/login', '/', '/terms'].includes(request.nextUrl.pathname) ||
+    request.nextUrl.pathname.startsWith('/pay') ||
+    request.nextUrl.pathname.startsWith('/api/invoice');
   
   if (!isPublicRoute && !user) {
     return NextResponse.redirect(new URL('/login', request.url))

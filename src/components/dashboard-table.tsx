@@ -60,6 +60,9 @@ export default function DashboardTable({
   const [filterMode, setFilterMode] = useState<"ALL" | "ACTIVE">("ALL");
   const [selectedItem, setSelectedItem] = useState<Registration | null>(null);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
+  const [deleteModalItem, setDeleteModalItem] = useState<Registration | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const router = useRouter();
 
   const activeRegistrationIds = new Set(
@@ -124,13 +127,24 @@ export default function DashboardTable({
     return baseDue + unpaidStaysDue;
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this registration?")) {
-      const res = await deleteRegistration(id);
-      if (res.error) {
-        alert(res.error);
-      } else {
-        setData(data.filter((d) => d.id !== id));
+  const handleDelete = (item: Registration) => {
+    setDeleteModalItem(item);
+    setDeleteError(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModalItem) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    const res = await deleteRegistration(deleteModalItem.id);
+    setIsDeleting(false);
+    if (res?.error) {
+      setDeleteError(res.error);
+    } else {
+      setData(data.filter((d) => d.id !== deleteModalItem.id));
+      setDeleteModalItem(null);
+      if (selectedItem?.id === deleteModalItem.id) {
+        setSelectedItem(null);
       }
     }
   };
@@ -318,7 +332,7 @@ export default function DashboardTable({
                       <button
                         className={`${styles.actionButton} ${styles.actionButtonDelete}`}
                         title="Delete"
-                        onClick={() => handleDelete(item.id)}
+                        onClick={() => handleDelete(item)}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -582,6 +596,76 @@ export default function DashboardTable({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModalItem && (
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.75)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 80, padding: "1rem" }}>
+          <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-primary)", borderRadius: "1rem", width: "100%", maxWidth: "420px", padding: "1.75rem", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)", position: "relative" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
+              <div style={{ width: "42px", height: "42px", borderRadius: "50%", backgroundColor: "rgba(239, 68, 68, 0.15)", color: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Trash2 size={22} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: "1.15rem", fontWeight: 700, margin: 0, color: "var(--text-primary)" }}>
+                  Delete Registration?
+                </h3>
+                <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", margin: 0, marginTop: "0.15rem" }}>
+                  This action cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <p style={{ fontSize: "0.9rem", color: "var(--text-primary)", lineHeight: "1.5", marginBottom: "1.25rem", backgroundColor: "var(--bg-primary)", padding: "0.85rem", borderRadius: "0.5rem", border: "1px solid var(--border-secondary)" }}>
+              Are you sure you want to delete the registration for dog <strong style={{ color: "#ef4444" }}>{deleteModalItem.dog_name}</strong> (Owner: {deleteModalItem.owner_name})?
+              <br />
+              <span style={{ fontSize: "0.8rem", color: "var(--text-tertiary)", display: "block", marginTop: "0.4rem" }}>
+                All associated stay records and billing history for this pet will also be removed.
+              </span>
+            </p>
+
+            {deleteError && (
+              <div style={{ padding: "0.75rem", backgroundColor: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: "0.5rem", color: "#ef4444", fontSize: "0.85rem", marginBottom: "1.25rem" }}>
+                {deleteError}
+              </div>
+            )}
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.6rem" }}>
+              <button
+                onClick={() => {
+                  setDeleteModalItem(null);
+                  setDeleteError(null);
+                }}
+                disabled={isDeleting}
+                className={styles.buttonGhost}
+                style={{ padding: "0.55rem 1rem", fontSize: "0.85rem", fontWeight: 600 }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                style={{
+                  padding: "0.55rem 1.25rem",
+                  backgroundColor: "#ef4444",
+                  color: "#ffffff",
+                  border: "none",
+                  borderRadius: "0.5rem",
+                  fontSize: "0.85rem",
+                  fontWeight: 700,
+                  cursor: isDeleting ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  boxShadow: "0 4px 6px -1px rgba(239, 68, 68, 0.3)",
+                  opacity: isDeleting ? 0.7 : 1,
+                }}
+              >
+                {isDeleting ? "Deleting..." : "Yes, Delete Record"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {lightboxImg && (
         <div

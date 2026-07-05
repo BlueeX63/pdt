@@ -11,7 +11,7 @@ import {
   sendInvoiceNotification,
 } from "@/app/actions";
 import { AdmissionValues } from "@/lib/schemas";
-import { Plus, Trash2, Calendar, Loader2, Edit2, LogOut, LogIn, Clock, CheckCircle2, X, Share2, ShieldCheck, Copy, Check, MessageSquare, Mail, ExternalLink, MessageCircle } from "lucide-react";
+import { Plus, Trash2, Calendar, Loader2, Edit2, LogOut, LogIn, Clock, CheckCircle2, X, Share2, ShieldCheck, Copy, Check, MessageSquare, Mail, ExternalLink, MessageCircle, FileText } from "lucide-react";
 
 
 interface Admission {
@@ -117,6 +117,9 @@ export default function VisitHistory({
     autoDispatchMsg?: string;
   } | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [deleteModalVisit, setDeleteModalVisit] = useState<Admission | null>(null);
+  const [isDeletingVisit, setIsDeletingVisit] = useState(false);
+  const [deleteVisitError, setDeleteVisitError] = useState<string | null>(null);
 
   const getCurrentTimeStr = () => {
     const now = new Date();
@@ -389,9 +392,21 @@ export default function VisitHistory({
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this stay record?")) {
-      await deleteAdmission(id);
+  const handleDelete = (visit: Admission) => {
+    setDeleteModalVisit(visit);
+    setDeleteVisitError(null);
+  };
+
+  const handleConfirmDeleteVisit = async () => {
+    if (!deleteModalVisit) return;
+    setIsDeletingVisit(true);
+    setDeleteVisitError(null);
+    const res = await deleteAdmission(deleteModalVisit.id);
+    setIsDeletingVisit(false);
+    if (res?.error) {
+      setDeleteVisitError(res.error);
+    } else {
+      setDeleteModalVisit(null);
       fetchAdmissions();
     }
   };
@@ -465,6 +480,17 @@ export default function VisitHistory({
 
           {/* Action Buttons */}
           <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+            <a
+              href={`/api/invoice/${visit.id}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.actionButton}
+              title="Download PDF Invoice"
+              style={{ display: "flex", alignItems: "center", gap: "0.35rem", padding: "0.35rem 0.7rem", width: "auto", backgroundColor: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.4)", textDecoration: "none" }}
+            >
+              <FileText size={14} className="text-emerald-500" />
+              <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#10b981" }}>PDF</span>
+            </a>
             <button
               className={styles.actionButton}
               onClick={() => handleShareInvoice(visit)}
@@ -477,7 +503,7 @@ export default function VisitHistory({
             <button className={styles.actionButton} onClick={() => startEdit(visit)} title="Edit Stay Details">
               <Edit2 size={14} />
             </button>
-            <button className={`${styles.actionButton} ${styles.actionButtonDelete}`} onClick={() => handleDelete(visit.id)} title="Delete Stay">
+            <button className={`${styles.actionButton} ${styles.actionButtonDelete}`} onClick={() => handleDelete(visit)} title="Delete Stay">
               <Trash2 size={14} />
             </button>
           </div>
@@ -1044,6 +1070,16 @@ export default function VisitHistory({
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
                 <a
+                  href={`/api/invoice/${invoiceModalData.id}/pdf`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", padding: "0.85rem 0.5rem", backgroundColor: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.4)", color: "#10b981", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 700, fontSize: "0.9rem", whiteSpace: "nowrap", gridColumn: "span 2", boxShadow: "var(--shadow-xs)" }}
+                >
+                  <FileText size={18} />
+                  Download / Print PDF Invoice
+                </a>
+
+                <a
                   href={`sms:${invoiceModalData.phone}?body=${encodeURIComponent(invoiceModalData.smsText)}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -1101,6 +1137,71 @@ export default function VisitHistory({
             <div style={{ display: "flex", justifyContent: "flex-end", borderTop: "1px solid var(--border-primary)", paddingTop: "1rem" }}>
               <button onClick={() => setInvoiceModalData(null)} style={{ padding: "0.5rem 1.25rem", backgroundColor: "var(--bg-tertiary)", border: "1px solid var(--border-primary)", borderRadius: "0.5rem", color: "var(--text-primary)", cursor: "pointer", fontWeight: 600 }}>
                 Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Stay Confirmation Modal */}
+      {deleteModalVisit && (
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.75)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 80, padding: "1rem" }}>
+          <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-primary)", borderRadius: "1rem", width: "100%", maxWidth: "420px", padding: "1.75rem", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)", position: "relative" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
+              <div style={{ width: "42px", height: "42px", borderRadius: "50%", backgroundColor: "rgba(239, 68, 68, 0.15)", color: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Trash2 size={22} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: "1.15rem", fontWeight: 700, margin: 0, color: "var(--text-primary)" }}>
+                  Delete Stay Record?
+                </h3>
+                <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", margin: 0, marginTop: "0.15rem" }}>
+                  This action cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <p style={{ fontSize: "0.9rem", color: "var(--text-primary)", lineHeight: "1.5", marginBottom: "1.25rem", backgroundColor: "var(--bg-primary)", padding: "0.85rem", borderRadius: "0.5rem", border: "1px solid var(--border-secondary)" }}>
+              Are you sure you want to delete the stay record from <strong style={{ color: "#ef4444" }}>{formatDate(deleteModalVisit.entry_date)}</strong>{deleteModalVisit.exit_date ? ` to ${formatDate(deleteModalVisit.exit_date)}` : " (Current Stay)"}?
+            </p>
+
+            {deleteVisitError && (
+              <div style={{ padding: "0.75rem", backgroundColor: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: "0.5rem", color: "#ef4444", fontSize: "0.85rem", marginBottom: "1.25rem" }}>
+                {deleteVisitError}
+              </div>
+            )}
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.6rem" }}>
+              <button
+                onClick={() => {
+                  setDeleteModalVisit(null);
+                  setDeleteVisitError(null);
+                }}
+                disabled={isDeletingVisit}
+                style={{ padding: "0.55rem 1rem", backgroundColor: "var(--bg-tertiary)", border: "1px solid var(--border-primary)", borderRadius: "0.5rem", color: "var(--text-primary)", cursor: "pointer", fontSize: "0.85rem", fontWeight: 600 }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDeleteVisit}
+                disabled={isDeletingVisit}
+                style={{
+                  padding: "0.55rem 1.25rem",
+                  backgroundColor: "#ef4444",
+                  color: "#ffffff",
+                  border: "none",
+                  borderRadius: "0.5rem",
+                  fontSize: "0.85rem",
+                  fontWeight: 700,
+                  cursor: isDeletingVisit ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  boxShadow: "0 4px 6px -1px rgba(239, 68, 68, 0.3)",
+                  opacity: isDeletingVisit ? 0.7 : 1,
+                }}
+              >
+                {isDeletingVisit ? "Deleting..." : "Yes, Delete Stay"}
               </button>
             </div>
           </div>
