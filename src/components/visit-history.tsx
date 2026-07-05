@@ -295,7 +295,7 @@ export default function VisitHistory({
       return;
     }
 
-    if (!visit?.exit_date && editExitDate) {
+    if (editExitDate) {
       const notif = await sendInvoiceNotification(id);
       if (notif.success) {
         setInvoiceModalData({
@@ -1114,10 +1114,19 @@ export default function VisitHistory({
                   href={invoiceModalData.email ? `mailto:${invoiceModalData.email}?subject=${encodeURIComponent(invoiceModalData.emailSubject)}&body=${encodeURIComponent(invoiceModalData.emailBody)}` : `mailto:?subject=${encodeURIComponent(invoiceModalData.emailSubject)}&body=${encodeURIComponent(invoiceModalData.emailBody)}`}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => {
+                    sendInvoiceNotification(invoiceModalData.id);
+                    const link = document.createElement("a");
+                    link.href = `/api/invoice/${invoiceModalData.id}/pdf`;
+                    link.download = `Invoice-${invoiceModalData.invoiceNo}.pdf`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
                   style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "0.75rem 0.5rem", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-primary)", color: "var(--text-primary)", borderRadius: "0.5rem", textDecoration: "none", fontWeight: 600, fontSize: "0.85rem", whiteSpace: "nowrap" }}
                 >
                   <Mail size={16} className="text-indigo-500" />
-                  Email App
+                  Email App (Send + Download PDF)
                 </a>
 
                 <button
