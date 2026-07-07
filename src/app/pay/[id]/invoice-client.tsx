@@ -51,7 +51,7 @@ export default function InvoicePaymentClient({
     endDate.setHours(0, 0, 0, 0);
     const diffTime = endDate.getTime() - startDate.getTime();
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-    return Math.max(1, diffDays + 1);
+    return Math.max(1, diffDays);
   };
 
   const days = calculateDays(admission.entry_date, admission.exit_date);

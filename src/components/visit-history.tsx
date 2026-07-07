@@ -38,7 +38,7 @@ const calculateDays = (start: string, end?: string | null) => {
 
   const diffTime = endDate.getTime() - startDate.getTime();
   const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-  return Math.max(1, diffDays + 1);
+  return Math.max(1, diffDays);
 };
 
 const formatDate = (dateStr: string) => {

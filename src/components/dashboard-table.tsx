@@ -106,7 +106,7 @@ export default function DashboardTable({
 
       const diffTime = endDate.getTime() - startDate.getTime();
       const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-      totalDays += Math.max(1, diffDays + 1);
+      totalDays += Math.max(1, diffDays);
     });
     const totalAmount = totalDays * perDayCharges;
     return { totalDays, totalAmount, stayCount: dogAdmissions.length };
@@ -127,7 +127,7 @@ export default function DashboardTable({
           const endDate = new Date(a.exit_date);
           endDate.setHours(0, 0, 0, 0);
           const diffTime = endDate.getTime() - startDate.getTime();
-          const diffDays = Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1);
+          const diffDays = Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)));
           const rate = Number(reg.per_day_hostel_charges) || 500;
           unpaidStaysDue += Math.max(0, diffDays * rate - adv);
         }
