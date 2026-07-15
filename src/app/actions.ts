@@ -69,7 +69,7 @@ export async function createRegistration(payload: Record<string, unknown>) {
     .insert([payload]);
 
   if (error && (error.code === "42703" || error.message?.includes("column"))) {
-    const { serial_number, owner_photo, dog_photo, ...basicPayload } = payload;
+    const { serial_number, owner_photo, dog_photo, aadhar_card_photo, ...basicPayload } = payload;
     const res = await supabase.from("registrations").insert([basicPayload]);
     error = res.error;
   }
@@ -127,7 +127,7 @@ export async function updateRegistration(id: string, payload: Record<string, unk
     .eq("id", id);
 
   if (error && (error.code === "42703" || error.message?.includes("column"))) {
-    const { serial_number, owner_photo, dog_photo, ...basicPayload } = payload;
+    const { serial_number, owner_photo, dog_photo, aadhar_card_photo, ...basicPayload } = payload;
     const res = await supabase.from("registrations").update(basicPayload).eq("id", id);
     error = res.error;
   }

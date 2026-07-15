@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { User, Dog, IndianRupee, Save, Loader2, ArrowLeft, Camera, X } from "lucide-react";
+import { User, Dog, IndianRupee, Save, Loader2, ArrowLeft, Camera, X, IdCard } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -263,6 +263,7 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
       serial_number: (initialData?.serial_number as string) || "",
       owner_photo: (initialData?.owner_photo as string) || "",
       dog_photo: (initialData?.dog_photo as string) || "",
+      aadhar_card_photo: (initialData?.aadhar_card_photo as string) || "",
       advance_amount: initialData.advance_amount ? String(initialData.advance_amount) : "",
       due_amount: initialData.due_amount ? String(initialData.due_amount) : "",
       total_amount: initialData.total_amount ? String(initialData.total_amount) : "",
@@ -308,8 +309,8 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
 
     if (res.error) {
       setSubmitError(
-        res.error.includes("owner_photo") || res.error.includes("dog_photo") || res.error.includes("does not exist")
-          ? `${res.error} — Did you run the SQL script in Supabase? Run: ALTER TABLE registrations ADD COLUMN IF NOT EXISTS owner_photo TEXT; ALTER TABLE registrations ADD COLUMN IF NOT EXISTS dog_photo TEXT;`
+        res.error.includes("owner_photo") || res.error.includes("dog_photo") || res.error.includes("aadhar_card_photo") || res.error.includes("does not exist")
+          ? `${res.error} — Did you run the SQL script in Supabase? Run: ALTER TABLE registrations ADD COLUMN IF NOT EXISTS owner_photo TEXT; ALTER TABLE registrations ADD COLUMN IF NOT EXISTS dog_photo TEXT; ALTER TABLE registrations ADD COLUMN IF NOT EXISTS aadhar_card_photo TEXT;`
           : res.error
       );
     } else {
@@ -417,6 +418,13 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
               <label className={styles.label}>Aadhar Card No</label>
               <input {...register("aadhar_card_no")} className={styles.input} placeholder="XXXX XXXX XXXX" />
             </div>
+
+            <PhotoUploadField
+              label="Aadhar Card Photo"
+              value={watch("aadhar_card_photo")}
+              onChange={(url) => setValue("aadhar_card_photo", url)}
+              icon={IdCard}
+            />
 
             <div className={`${styles.formGroup} ${styles.gridFull}`}>
               <label className={styles.label}>Other Information</label>

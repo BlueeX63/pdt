@@ -48,6 +48,7 @@ interface Registration {
   per_day_hostel_charges?: number | string;
   owner_photo?: string;
   dog_photo?: string;
+  aadhar_card_photo?: string;
   serial_number?: string;
   requires_hostel?: boolean;
   requires_training?: boolean;
@@ -429,8 +430,8 @@ export default function DashboardTable({
                 </div>
 
                 {/* Photo Previews */}
-                {selectedItem.dog_photo || selectedItem.owner_photo ? (
-                  <div style={{ display: "grid", gridTemplateColumns: selectedItem.dog_photo && selectedItem.owner_photo ? "1fr 1fr" : "1fr", gap: "0.75rem", marginBottom: "0.5rem" }}>
+                {selectedItem.dog_photo || selectedItem.owner_photo || selectedItem.aadhar_card_photo ? (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "0.75rem", marginBottom: "0.5rem" }}>
                     {selectedItem.dog_photo ? (
                       <div
                         onClick={() => setLightboxImg(String(selectedItem.dog_photo))}
@@ -454,6 +455,19 @@ export default function DashboardTable({
                         <div>
                           <div style={{ fontSize: "0.6875rem", color: "var(--text-tertiary)", textTransform: "uppercase", fontWeight: 600 }}>Owner Photo</div>
                           <div style={{ fontSize: "0.875rem", fontWeight: 600 }}>{selectedItem.owner_name}</div>
+                        </div>
+                      </div>
+                    ) : null}
+                    {selectedItem.aadhar_card_photo ? (
+                      <div
+                        onClick={() => setLightboxImg(String(selectedItem.aadhar_card_photo))}
+                        style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem", backgroundColor: "var(--bg-secondary)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-primary)", cursor: "pointer" }}
+                        title="Click to view full screen"
+                      >
+                        <img src={String(selectedItem.aadhar_card_photo)} alt="Aadhar Card" style={{ width: "48px", height: "48px", borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border-hover)" }} />
+                        <div>
+                          <div style={{ fontSize: "0.6875rem", color: "var(--text-tertiary)", textTransform: "uppercase", fontWeight: 600 }}>Aadhar Card</div>
+                          <div style={{ fontSize: "0.875rem", fontWeight: 600 }}>View Photo</div>
                         </div>
                       </div>
                     ) : null}
