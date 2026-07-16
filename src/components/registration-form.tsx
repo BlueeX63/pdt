@@ -263,7 +263,8 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
       serial_number: (initialData?.serial_number as string) || "",
       owner_photo: (initialData?.owner_photo as string) || "",
       dog_photo: (initialData?.dog_photo as string) || "",
-      aadhar_card_photo: (initialData?.aadhar_card_photo as string) || "",
+      aadhar_card_front_photo: (initialData?.aadhar_card_front_photo as string) || "",
+      aadhar_card_back_photo: (initialData?.aadhar_card_back_photo as string) || "",
       advance_amount: initialData.advance_amount ? String(initialData.advance_amount) : "",
       due_amount: initialData.due_amount ? String(initialData.due_amount) : "",
       total_amount: initialData.total_amount ? String(initialData.total_amount) : "",
@@ -309,8 +310,8 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
 
     if (res.error) {
       setSubmitError(
-        res.error.includes("owner_photo") || res.error.includes("dog_photo") || res.error.includes("aadhar_card_photo") || res.error.includes("does not exist")
-          ? `${res.error} — Did you run the SQL script in Supabase? Run: ALTER TABLE registrations ADD COLUMN IF NOT EXISTS owner_photo TEXT; ALTER TABLE registrations ADD COLUMN IF NOT EXISTS dog_photo TEXT; ALTER TABLE registrations ADD COLUMN IF NOT EXISTS aadhar_card_photo TEXT;`
+        res.error.includes("owner_photo") || res.error.includes("dog_photo") || res.error.includes("aadhar_card_front_photo") || res.error.includes("aadhar_card_back_photo") || res.error.includes("does not exist")
+          ? `${res.error} — Did you run the SQL script in Supabase? Run: ALTER TABLE registrations ADD COLUMN IF NOT EXISTS owner_photo TEXT; ALTER TABLE registrations ADD COLUMN IF NOT EXISTS dog_photo TEXT; ALTER TABLE registrations ADD COLUMN IF NOT EXISTS aadhar_card_front_photo TEXT; ALTER TABLE registrations ADD COLUMN IF NOT EXISTS aadhar_card_back_photo TEXT;`
           : res.error
       );
     } else {
@@ -420,9 +421,16 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
             </div>
 
             <PhotoUploadField
-              label="Aadhar Card Photo"
-              value={watch("aadhar_card_photo")}
-              onChange={(url) => setValue("aadhar_card_photo", url)}
+              label="Aadhar Card Front Photo"
+              value={watch("aadhar_card_front_photo")}
+              onChange={(url) => setValue("aadhar_card_front_photo", url)}
+              icon={IdCard}
+            />
+
+            <PhotoUploadField
+              label="Aadhar Card Back Photo"
+              value={watch("aadhar_card_back_photo")}
+              onChange={(url) => setValue("aadhar_card_back_photo", url)}
               icon={IdCard}
             />
 

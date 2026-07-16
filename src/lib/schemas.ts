@@ -13,7 +13,8 @@ export const formSchema = z.object({
   email: z.string().email("Invalid email").or(z.literal("")).optional().nullable(),
   aadhar_card_no: z.string().optional().nullable(),
   owner_photo: z.string().max(5000000, "Image size exceeds 5MB limit").refine(val => !val || val.startsWith("data:image/") || val.startsWith("http"), "Invalid image format").optional().nullable(),
-  aadhar_card_photo: z.string().max(5000000, "Image size exceeds 5MB limit").refine(val => !val || val.startsWith("data:image/") || val.startsWith("http"), "Invalid image format").optional().nullable(),
+  aadhar_card_front_photo: z.string().max(5000000, "Image size exceeds 5MB limit").refine(val => !val || val.startsWith("data:image/") || val.startsWith("http"), "Invalid image format").optional().nullable(),
+  aadhar_card_back_photo: z.string().max(5000000, "Image size exceeds 5MB limit").refine(val => !val || val.startsWith("data:image/") || val.startsWith("http"), "Invalid image format").optional().nullable(),
   other_info: z.string().optional().nullable(),
 
   status: z.enum(["NEW", "OLD"]).optional().nullable(),
