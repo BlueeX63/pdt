@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { User, Dog, IndianRupee, Save, Loader2, ArrowLeft, Camera, X, IdCard } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -284,6 +284,32 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
     defaultValues: getInitialValues(),
   });
 
+  useEffect(() => {
+    if (!isEditing) {
+      const draft = localStorage.getItem("registration-draft");
+      if (draft) {
+        try {
+          const parsedDraft = JSON.parse(draft);
+          // Only reset with draft if it has actual values to prevent overriding with empty object
+          if (Object.keys(parsedDraft).length > 0) {
+            reset({ ...getInitialValues(), ...parsedDraft });
+          }
+        } catch (e) {
+          console.error("Failed to parse draft", e);
+        }
+      }
+    }
+  }, [isEditing, reset]); // Add getInitialValues to dependency array if we memoize it, otherwise omit
+
+  useEffect(() => {
+    const subscription = watch((value) => {
+      if (!isEditing) {
+        localStorage.setItem("registration-draft", JSON.stringify(value));
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, isEditing]);
+
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     setSubmitError(null);
@@ -298,24 +324,31 @@ export default function RegistrationForm({ initialData, registrationId }: Props)
       per_day_hostel_charges: data.per_day_hostel_charges ? Number(data.per_day_hostel_charges) : null,
     };
 
-    let res;
+    try {
+      let res;
 
-    if (isEditing && registrationId) {
-      res = await updateRegistration(registrationId, payload);
-    } else {
-      res = await createRegistration(payload);
-    }
+      if (isEditing && registrationId) {
+        res = await updateRegistration(registrationId, payload);
+      } else {
+        res = await createRegistration(payload);
+      }
 
-    setIsSubmitting(false);
-
-    if (res.error) {
-      setSubmitError(
-        res.error.includes("owner_photo") || res.error.includes("dog_photo") || res.error.includes("aadhar_card_front_photo") || res.error.includes("aadhar_card_back_photo") || res.error.includes("does not exist")
-          ? `${res.error} — Did you run the SQL script in Supabase? Run: ALTER TABLE registrations ADD COLUMN IF NOT EXISTS owner_photo TEXT; ALTER TABLE registrations ADD COLUMN IF NOT EXISTS dog_photo TEXT; ALTER TABLE registrations ADD COLUMN IF NOT EXISTS aadhar_card_front_photo TEXT; ALTER TABLE registrations ADD COLUMN IF NOT EXISTS aadhar_card_back_photo TEXT;`
-          : res.error
-      );
-    } else {
-      router.push('/dashboard');
+      if (res?.error) {
+        setSubmitError(
+          res.error.includes("owner_photo") || res.error.includes("dog_photo") || res.error.includes("aadhar_card_front_photo") || res.error.includes("aadhar_card_back_photo") || res.error.includes("does not exist")
+            ? `${res.error} — Did you run the SQL script in Supabase? Run: ALTER TABLE registrations ADD COLUMN IF NOT EXISTS owner_photo TEXT; ALTER TABLE registrations ADD COLUMN IF NOT EXISTS dog_photo TEXT; ALTER TABLE registrations ADD COLUMN IF NOT EXISTS aadhar_card_front_photo TEXT; ALTER TABLE registrations ADD COLUMN IF NOT EXISTS aadhar_card_back_photo TEXT;`
+            : res.error
+        );
+      } else {
+        if (!isEditing) {
+          localStorage.removeItem("registration-draft");
+        }
+        router.push('/dashboard');
+      }
+    } catch (err: any) {
+      setSubmitError(err.message || "An unexpected error occurred while saving.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
